@@ -8,6 +8,7 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
 
     Route::group(['prefix' => '{provider}'], function () {
         Route::post('otp', VerificationCodeController::class)->middleware('throttle:5,1');
+        Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');
         Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
     });
 

@@ -4,14 +4,14 @@ namespace App\Actions\Auth;
 
 use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
-use App\Auth\Strategies\Contracts\IssuesVerificationCode;
+use App\Auth\Strategies\Contracts\RegistersIdentity;
 use App\Exceptions\Auth\AuthProviderDisabledException;
-use App\Exceptions\Auth\OtpThrottledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class SendVerificationCodeAction
+class RegisterAction
 {
     use AsAction;
 
@@ -20,18 +20,21 @@ class SendVerificationCodeAction
     }
 
     /**
-     * @throws OtpThrottledException|AuthProviderDisabledException|UnsupportedAuthOperationException
+     * @throws AuthProviderDisabledException
+     * @throws UnsupportedAuthOperationException
      */
-    public function handle(AuthProviderName $provider, array $data): void
+    public function handle(AuthProviderName $provider, array $data): string
     {
         $strategy = $this->resolver->resolve($provider);
 
-        if (! $strategy instanceof IssuesVerificationCode) {
+        if (! $strategy instanceof RegistersIdentity) {
             throw new UnsupportedAuthOperationException($provider->value);
         }
 
-        Validator::make($data, $strategy->codeRules())->validate();
+        Validator::make($data, $strategy->registrationRules())->validate();
 
-        $strategy->sendCode($data);
+        $user = $strategy->register($data);
+
+        return Auth::guard('api')->login($user);
     }
 }

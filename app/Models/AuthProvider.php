@@ -9,6 +9,9 @@ class AuthProvider extends Model
 {
     protected $fillable = ['user_id', 'provider', 'identifier', 'meta', 'verified_at'];
 
+    /** meta may hold provider-specific secrets (e.g. password hash). */
+    protected $hidden = ['meta'];
+
     protected function casts(): array
     {
         return [
