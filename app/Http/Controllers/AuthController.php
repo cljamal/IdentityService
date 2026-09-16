@@ -2,71 +2,40 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\JsonResponse;
+use App\Actions\Auth\LoginAction;
+use App\Auth\AuthProviderName;
+use App\Http\Resources\Auth\TokenResource;
+use App\Http\Resources\MessageResource;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
     /**
-     * Get a JWT via given credentials.
-     *
-     * @return JsonResponse
+     * Authenticate via the given provider and return a JWT.
      */
-    public function login(string $provider)
+    public function login(AuthProviderName $provider, Request $request): TokenResource
     {
-        $credentials = request(['email', 'password']);
+        $token = LoginAction::run($provider, $request->all());
 
-        if (! $token = auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        return $this->respondWithToken($token);
+        return TokenResource::make($token);
     }
 
     /**
-     * Get the authenticated User.
-     *
-     * @return JsonResponse
+     * Log the user out (invalidate the token).
      */
-    public function me()
+    public function logout(): MessageResource
     {
-        return response()->json(auth()->user());
-    }
+        Auth::guard('api')->logout();
 
-    /**
-     * Log the user out (Invalidate the token).
-     *
-     * @return JsonResponse
-     */
-    public function logout()
-    {
-        auth()->logout();
-
-        return response()->json(['message' => 'Successfully logged out']);
+        return MessageResource::make('Successfully logged out');
     }
 
     /**
      * Refresh a token.
-     *
-     * @return JsonResponse
      */
-    public function refresh()
+    public function refresh(): TokenResource
     {
-        return $this->respondWithToken(auth()->refresh());
-    }
-
-    /**
-     * Get the token array structure.
-     *
-     * @param  string $token
-     *
-     * @return JsonResponse
-     */
-    protected function respondWithToken($token)
-    {
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60
-        ]);
+        return TokenResource::make(Auth::guard('api')->refresh());
     }
 }
