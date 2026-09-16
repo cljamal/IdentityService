@@ -29,6 +29,21 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
             ->first();
     }
 
+    public function findByUser(AuthProviderName $provider, User $user): ?AuthProvider
+    {
+        return AuthProvider::query()
+            ->where('provider', $provider->value)
+            ->where('user_id', $user->id)
+            ->first();
+    }
+
+    public function updateSecret(AuthProvider $identity, array $meta): void
+    {
+        $identity->update([
+            'meta' => array_merge($identity->meta ?? [], $meta),
+        ]);
+    }
+
     public function createUserWithIdentity(
         AuthProviderName $provider,
         string $identifier,

@@ -3,6 +3,7 @@
 namespace App\Auth\Strategies;
 
 use App\Auth\AuthProviderName;
+use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Auth\Strategies\Contracts\AuthStrategy;
 use App\Auth\Strategies\Contracts\IssuesVerificationCode;
 use App\Exceptions\Auth\InvalidOtpException;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 
 class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode
 {
+    use GeneratesVerificationCode;
+
     private const PHONE_RULE = ['required', 'string', 'regex:/^\+?[1-9]\d{7,14}$/'];
 
     public function __construct(
@@ -64,15 +67,6 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode
         $this->otp->forget($phone);
 
         return $this->providers->firstOrCreateUser(AuthProviderName::PhoneOtp, $phone);
-    }
-
-    private function generateCode(): string
-    {
-        if (app()->environment('local')) {
-            return '1111';
-        }
-
-        return (string) random_int(1000, 9999);
     }
 
     private function dispatch(string $phone, string $code): void

@@ -35,4 +35,30 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Username/Password Rescue Contact
+    |--------------------------------------------------------------------------
+    |
+    | "username" has no delivery channel of its own, so "forgot password"
+    | for it is only possible if some other table on your side records an
+    | out-of-band contact (email, phone, ...) per user. Leave "table" empty
+    | to keep it unsupported (default) — password/forgot on this provider
+    | then responds 400 and never touches the database or Redis.
+    |
+    | This resolver assumes a generic EAV-style meta table (user_id/key/value).
+    | If your rescue contact lives somewhere else (a dedicated column, another
+    | service, ...), bind App\Auth\Rescue\RescueContactResolver to your own
+    | implementation in AppServiceProvider instead of using this config.
+    |
+    */
+
+    'username_password_rescue' => [
+        'table' => env('AUTH_USERNAME_PASSWORD_RESCUE_TABLE'),
+        'user_id_column' => env('AUTH_USERNAME_PASSWORD_RESCUE_USER_ID_COLUMN', 'user_id'),
+        'key_column' => env('AUTH_USERNAME_PASSWORD_RESCUE_KEY_COLUMN', 'meta_key'),
+        'value_column' => env('AUTH_USERNAME_PASSWORD_RESCUE_VALUE_COLUMN', 'meta_value'),
+        'meta_key' => env('AUTH_USERNAME_PASSWORD_RESCUE_META_KEY', 'email'),
+    ],
+
 ];

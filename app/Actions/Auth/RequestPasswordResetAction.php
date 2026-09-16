@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Actions\Auth;
+
+use App\Auth\AuthProviderName;
+use App\Auth\AuthStrategyResolver;
+use App\Auth\Strategies\Contracts\ResetsPassword;
+use App\Exceptions\Auth\UnsupportedAuthOperationException;
+use Illuminate\Support\Facades\Validator;
+use Lorisleiva\Actions\Concerns\AsAction;
+
+class RequestPasswordResetAction
+{
+    use AsAction;
+
+    public function __construct(private readonly AuthStrategyResolver $resolver)
+    {
+    }
+
+    public function handle(AuthProviderName $provider, array $data): void
+    {
+        $strategy = $this->resolver->resolve($provider);
+
+        if (! $strategy instanceof ResetsPassword) {
+            throw new UnsupportedAuthOperationException($provider->value);
+        }
+
+        Validator::make($data, $strategy->passwordResetRequestRules())->validate();
+
+        $strategy->requestPasswordReset($data);
+    }
+}

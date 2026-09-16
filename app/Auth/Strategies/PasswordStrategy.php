@@ -4,6 +4,7 @@ namespace App\Auth\Strategies;
 
 use App\Auth\AuthProviderName;
 use App\Auth\Strategies\Contracts\AuthStrategy;
+use App\Auth\Strategies\Contracts\ChangesPassword;
 use App\Auth\Strategies\Contracts\RegistersIdentity;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Models\User;
@@ -16,9 +17,9 @@ use Illuminate\Support\Facades\Hash;
  * identity must go through an explicit register() step — authenticate()
  * only ever verifies, it never auto-creates.
  */
-abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity
+abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity, ChangesPassword
 {
-    public function __construct(private readonly AuthProviderRepositoryInterface $providers)
+    public function __construct(protected readonly AuthProviderRepositoryInterface $providers)
     {
     }
 
@@ -59,5 +60,24 @@ abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity
             $data[$this->identifierField()],
             ['password' => Hash::make($data['password'])],
         );
+    }
+
+    public function changePasswordRules(): array
+    {
+        return [
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ];
+    }
+
+    public function changePassword(User $user, array $data): void
+    {
+        $identity = $this->providers->findByUser($this->provider(), $user);
+
+        if (! $identity || ! Hash::check($data['current_password'], $identity->meta['password'] ?? '')) {
+            throw new InvalidCredentialsException();
+        }
+
+        $this->providers->updateSecret($identity, ['password' => Hash::make($data['password'])]);
     }
 }

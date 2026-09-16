@@ -13,39 +13,39 @@ class RedisOtpRepository implements OtpRepositoryInterface
     /** Resend cooldown: one code per minute. */
     private const RESEND_COOLDOWN = 60;
 
-    public function put(string $phone, string $code): void
+    public function put(string $subject, string $code): void
     {
-        Redis::setex($this->codeKey($phone), self::CODE_TTL, $code);
-        Redis::setex($this->cooldownKey($phone), self::RESEND_COOLDOWN, 1);
+        Redis::setex($this->codeKey($subject), self::CODE_TTL, $code);
+        Redis::setex($this->cooldownKey($subject), self::RESEND_COOLDOWN, 1);
     }
 
-    public function get(string $phone): ?string
+    public function get(string $subject): ?string
     {
-        return Redis::get($this->codeKey($phone)) ?: null;
+        return Redis::get($this->codeKey($subject)) ?: null;
     }
 
-    public function forget(string $phone): void
+    public function forget(string $subject): void
     {
-        Redis::del($this->codeKey($phone));
+        Redis::del($this->codeKey($subject));
     }
 
-    public function canBeRequested(string $phone): bool
+    public function canBeRequested(string $subject): bool
     {
-        return ! Redis::exists($this->cooldownKey($phone));
+        return ! Redis::exists($this->cooldownKey($subject));
     }
 
-    public function secondsUntilNextRequest(string $phone): int
+    public function secondsUntilNextRequest(string $subject): int
     {
-        return max(0, Redis::ttl($this->cooldownKey($phone)));
+        return max(0, Redis::ttl($this->cooldownKey($subject)));
     }
 
-    private function codeKey(string $phone): string
+    private function codeKey(string $subject): string
     {
-        return "otp:code:{$phone}";
+        return "otp:code:{$subject}";
     }
 
-    private function cooldownKey(string $phone): string
+    private function cooldownKey(string $subject): string
     {
-        return "otp:cooldown:{$phone}";
+        return "otp:cooldown:{$subject}";
     }
 }

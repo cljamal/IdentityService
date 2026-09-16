@@ -20,6 +20,16 @@ interface AuthProviderRepositoryInterface
     public function findByIdentifier(AuthProviderName $provider, string $identifier): ?AuthProvider;
 
     /**
+     * Find the given user's identity record for the given provider, if any.
+     */
+    public function findByUser(AuthProviderName $provider, User $user): ?AuthProvider;
+
+    /**
+     * Merge the given data into the identity's meta (e.g. rotate a password hash).
+     */
+    public function updateSecret(AuthProvider $identity, array $meta): void;
+
+    /**
      * Create a new user and link it to a new identity record.
      *
      * @param  array  $meta  Provider-specific secret/extra data (e.g. password hash).

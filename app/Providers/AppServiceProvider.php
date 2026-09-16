@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Rescue\MetaTableRescueContactResolver;
+use App\Auth\Rescue\NullRescueContactResolver;
+use App\Auth\Rescue\RescueContactResolver;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use App\Repositories\EloquentAuthProviderRepository;
@@ -19,6 +22,22 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(OtpRepositoryInterface::class, RedisOtpRepository::class);
         $this->app->bind(AuthProviderRepositoryInterface::class, EloquentAuthProviderRepository::class);
         $this->app->singleton(AuthStrategyResolver::class);
+
+        $this->app->bind(RescueContactResolver::class, function () {
+            $table = config('auth_providers.username_password_rescue.table');
+
+            if (blank($table)) {
+                return new NullRescueContactResolver();
+            }
+
+            return new MetaTableRescueContactResolver(
+                table: $table,
+                userIdColumn: config('auth_providers.username_password_rescue.user_id_column'),
+                keyColumn: config('auth_providers.username_password_rescue.key_column'),
+                valueColumn: config('auth_providers.username_password_rescue.value_column'),
+                metaKey: config('auth_providers.username_password_rescue.meta_key'),
+            );
+        });
     }
 
     /**
