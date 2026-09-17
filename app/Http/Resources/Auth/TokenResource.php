@@ -4,6 +4,7 @@ namespace App\Http\Resources\Auth;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
 class TokenResource extends JsonResource
 {
@@ -17,7 +18,10 @@ class TokenResource extends JsonResource
         return [
             'access_token' => $this->token,
             'token_type' => 'bearer',
-            'expires_in' => config('jwt.ttl') * 60,
+            // Реальный TTL гварда, а не глобальный config('jwt.ttl') —
+            // они разъедутся, если когда-нибудь переопределить ttl для
+            // конкретного гварда в config/auth.php.
+            'expires_in' => Auth::guard('id-api')->getTTL() * 60,
         ];
     }
 }

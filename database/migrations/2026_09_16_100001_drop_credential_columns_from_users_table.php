@@ -17,11 +17,14 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Best-effort: the dropped data is gone for good, and `name` no
+        // longer gets set by any current registration path (createUserWithIdentity
+        // never sets it), so nothing here can be restored as NOT NULL without
+        // crashing on a table that already has rows — these come back nullable.
         Schema::table('users', function (Blueprint $table) {
-            $table->string('name')->nullable(false)->change();
-            $table->string('email')->unique()->after('name');
+            $table->string('email')->nullable()->unique()->after('name');
             $table->timestamp('email_verified_at')->nullable()->after('email');
-            $table->string('password')->after('email_verified_at');
+            $table->string('password')->nullable()->after('email_verified_at');
             $table->rememberToken()->after('password');
         });
     }

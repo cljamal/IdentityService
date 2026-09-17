@@ -4,6 +4,7 @@ namespace App\Actions\Auth;
 
 use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +26,10 @@ class LoginAction
     public function handle(AuthProviderName $provider, array $data): string
     {
         $strategy = $this->resolver->resolve($provider);
+
+        if ($strategy instanceof NormalizesInput) {
+            $data = $strategy->normalize($data);
+        }
 
         Validator::make($data, $strategy->rules())->validate();
 

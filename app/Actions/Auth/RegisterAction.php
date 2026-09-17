@@ -4,6 +4,7 @@ namespace App\Actions\Auth;
 
 use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\RegistersIdentity;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
@@ -29,6 +30,10 @@ class RegisterAction
 
         if (! $strategy instanceof RegistersIdentity) {
             throw new UnsupportedAuthOperationException($provider->value);
+        }
+
+        if ($strategy instanceof NormalizesInput) {
+            $data = $strategy->normalize($data);
         }
 
         Validator::make($data, $strategy->registrationRules())->validate();

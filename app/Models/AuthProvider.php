@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use RuntimeException;
 
 class AuthProvider extends Model
 {
@@ -23,5 +24,18 @@ class AuthProvider extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The linked user, or a loud failure if this identity is orphaned
+     * (its user was deleted — user_id is nullOnDelete). Callers that have
+     * already verified a credential against this identity use this: at
+     * that point a missing user means corrupted data, not "not found".
+     */
+    public function userOrFail(): User
+    {
+        return $this->user ?? throw new RuntimeException(
+            "AuthProvider #{$this->id} ({$this->provider}:{$this->identifier}) has no linked user."
+        );
     }
 }

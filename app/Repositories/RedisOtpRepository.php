@@ -15,8 +15,12 @@ class RedisOtpRepository implements OtpRepositoryInterface
 
     public function put(string $subject, string $code): void
     {
-        Redis::setex($this->codeKey($subject), self::CODE_TTL, $code);
-        Redis::setex($this->cooldownKey($subject), self::RESEND_COOLDOWN, 1);
+        // MULTI/EXEC — иначе сбой между двумя SETEX мог бы записать код
+        // без cooldown и тем самым обойти "один код в минуту".
+        Redis::transaction(function ($tx) use ($subject, $code) {
+            $tx->setex($this->codeKey($subject), self::CODE_TTL, $code);
+            $tx->setex($this->cooldownKey($subject), self::RESEND_COOLDOWN, 1);
+        });
     }
 
     public function get(string $subject): ?string

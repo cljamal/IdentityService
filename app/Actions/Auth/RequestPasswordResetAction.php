@@ -4,6 +4,7 @@ namespace App\Actions\Auth;
 
 use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Validator;
@@ -23,6 +24,10 @@ class RequestPasswordResetAction
 
         if (! $strategy instanceof ResetsPassword) {
             throw new UnsupportedAuthOperationException($provider->value);
+        }
+
+        if ($strategy instanceof NormalizesInput) {
+            $data = $strategy->normalize($data);
         }
 
         Validator::make($data, $strategy->passwordResetRequestRules())->validate();

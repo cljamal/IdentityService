@@ -5,10 +5,15 @@ namespace App\Auth\Strategies\Contracts;
 use App\Models\User;
 
 /**
- * Additional contract for password-based providers that have a channel
- * to deliver a reset code to (e.g. email). Providers without one (e.g.
- * a bare username) simply don't implement this — the generic reset
- * actions treat that as an unsupported operation (400).
+ * Additional contract for password-based providers that can reset a
+ * forgotten password via a code. A provider with no delivery channel of
+ * its own (e.g. a bare username) can still implement this if it has some
+ * other way to notify the user (see UsernamePasswordStrategy's optional,
+ * config-gated RescueContactResolver) — since PHP can't make interface
+ * implementation conditional on runtime config, such a provider must
+ * guard unsupported/unconfigured cases itself and throw
+ * UnsupportedAuthOperationException, rather than simply not implementing
+ * this interface.
  */
 interface ResetsPassword
 {

@@ -19,6 +19,13 @@ use Illuminate\Support\Facades\Hash;
  */
 abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity, ChangesPassword
 {
+    /**
+     * A valid, arbitrary bcrypt hash used only to keep authenticate()'s
+     * timing constant when no identity is found — Hash::check()'s cost
+     * depends on the hash's cost factor, not its content.
+     */
+    private const DUMMY_HASH = '$2y$12$CwTycUXWue0Thq9StjUM0uJ8Ffx5DZOG.iP4XCTnhSEHIZQ0BEqiG';
+
     public function __construct(protected readonly AuthProviderRepositoryInterface $providers)
     {
     }
@@ -38,11 +45,17 @@ abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity, Chan
     {
         $identity = $this->providers->findByIdentifier($this->provider(), $data[$this->identifierField()]);
 
-        if (! $identity || ! Hash::check($data['password'], $identity->meta['password'] ?? '')) {
+        // Всегда проверяем хэш (даже фиктивный), чтобы отсутствие identity
+        // не отличалось по времени ответа от неверного пароля — иначе это
+        // канал для энумерации существующих email/username.
+        $hash = $identity?->meta['password'] ?? self::DUMMY_HASH;
+        $valid = Hash::check($data['password'], $hash);
+
+        if (! $identity || ! $valid) {
             throw new InvalidCredentialsException();
         }
 
-        return $identity->user;
+        return $identity->userOrFail();
     }
 
     public function registrationRules(): array

@@ -3,13 +3,15 @@
 namespace App\Auth\Strategies;
 
 use App\Auth\AuthProviderName;
+use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
-class EmailPasswordStrategy extends PasswordStrategy implements ResetsPassword
+class EmailPasswordStrategy extends PasswordStrategy implements ResetsPassword, NormalizesInput
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,
@@ -24,6 +26,20 @@ class EmailPasswordStrategy extends PasswordStrategy implements ResetsPassword
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ];
+    }
+
+    /**
+     * Case-fold the email before it's validated/looked up — otherwise
+     * "Foo@Bar.com" and "foo@bar.com" could end up as different identities
+     * depending on the DB's collation.
+     */
+    public function normalize(array $data): array
+    {
+        if (isset($data['email']) && is_string($data['email'])) {
+            $data['email'] = Str::lower(trim($data['email']));
+        }
+
+        return $data;
     }
 
     protected function provider(): AuthProviderName

@@ -63,8 +63,6 @@ class CodeBasedPasswordReset
             throw new InvalidOtpException();
         }
 
-        $this->otp->forget($subject);
-
         $identity = $this->providers->findByIdentifier($provider, $identifier);
 
         if (! $identity) {
@@ -73,7 +71,11 @@ class CodeBasedPasswordReset
 
         $this->providers->updateSecret($identity, ['password' => Hash::make($newPassword)]);
 
-        return $identity->user;
+        // Код "сжигаем" только после успешной записи — иначе сбой записи
+        // потерял бы уже введённый верный код без всякой пользы для юзера.
+        $this->otp->forget($subject);
+
+        return $identity->userOrFail();
     }
 
     private function subject(AuthProviderName $provider, string $identifier): string

@@ -64,9 +64,13 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode
             throw new InvalidOtpException();
         }
 
+        $user = $this->providers->firstOrCreateUser(AuthProviderName::PhoneOtp, $phone);
+
+        // Код "сжигаем" только после успешного логина/создания юзера —
+        // иначе сбой записи в БД потерял бы уже введённый верный код.
         $this->otp->forget($phone);
 
-        return $this->providers->firstOrCreateUser(AuthProviderName::PhoneOtp, $phone);
+        return $user;
     }
 
     private function dispatch(string $phone, string $code): void

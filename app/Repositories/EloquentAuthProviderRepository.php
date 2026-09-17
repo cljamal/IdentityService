@@ -3,9 +3,11 @@
 namespace App\Repositories;
 
 use App\Auth\AuthProviderName;
+use App\Exceptions\Auth\IdentifierAlreadyTakenException;
 use App\Models\AuthProvider;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
@@ -15,10 +17,17 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
         $identity = $this->findByIdentifier($provider, $identifier);
 
         if ($identity) {
-            return $identity->user;
+            return $identity->userOrFail();
         }
 
-        return $this->createUserWithIdentity($provider, $identifier, verified: true);
+        try {
+            return $this->createUserWithIdentity($provider, $identifier, verified: true);
+        } catch (IdentifierAlreadyTakenException) {
+            // Гонка: два одновременных запроса с одним и тем же телефоном —
+            // не ошибка, конкурент просто успел создать identity первым.
+            return $this->findByIdentifier($provider, $identifier)?->userOrFail()
+                ?? throw new IdentifierAlreadyTakenException($identifier);
+        }
     }
 
     public function findByIdentifier(AuthProviderName $provider, string $identifier): ?AuthProvider
@@ -50,18 +59,22 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
         array $meta = [],
         bool $verified = false,
     ): User {
-        return DB::transaction(function () use ($provider, $identifier, $meta, $verified) {
-            $user = User::query()->create([]);
+        try {
+            return DB::transaction(function () use ($provider, $identifier, $meta, $verified) {
+                $user = User::query()->create([]);
 
-            AuthProvider::query()->create([
-                'user_id' => $user->id,
-                'provider' => $provider->value,
-                'identifier' => $identifier,
-                'meta' => $meta ?: null,
-                'verified_at' => $verified ? now() : null,
-            ]);
+                AuthProvider::query()->create([
+                    'user_id' => $user->id,
+                    'provider' => $provider->value,
+                    'identifier' => $identifier,
+                    'meta' => $meta ?: null,
+                    'verified_at' => $verified ? now() : null,
+                ]);
 
-            return $user;
-        });
+                return $user;
+            });
+        } catch (UniqueConstraintViolationException) {
+            throw new IdentifierAlreadyTakenException($identifier);
+        }
     }
 }

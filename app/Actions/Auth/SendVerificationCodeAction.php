@@ -5,6 +5,7 @@ namespace App\Actions\Auth;
 use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
 use App\Auth\Strategies\Contracts\IssuesVerificationCode;
+use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
@@ -28,6 +29,10 @@ class SendVerificationCodeAction
 
         if (! $strategy instanceof IssuesVerificationCode) {
             throw new UnsupportedAuthOperationException($provider->value);
+        }
+
+        if ($strategy instanceof NormalizesInput) {
+            $data = $strategy->normalize($data);
         }
 
         Validator::make($data, $strategy->codeRules())->validate();

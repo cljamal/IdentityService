@@ -61,7 +61,9 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
 
         $username = $data['username'];
         $identity = $this->providers->findByIdentifier($this->provider(), $username);
-        $contact = $identity ? $this->rescue->resolve($identity->user) : null;
+        // Orphaned identity (user удалён) должна выглядеть так же, как
+        // "не найдено" — иначе TypeError/500 сам стал бы каналом энумерации.
+        $contact = $identity?->user ? $this->rescue->resolve($identity->user) : null;
 
         $this->reset->request($this->provider(), $username, $contact);
     }
