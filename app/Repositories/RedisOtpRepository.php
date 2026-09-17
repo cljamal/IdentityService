@@ -17,6 +17,10 @@ class RedisOtpRepository implements OtpRepositoryInterface
     {
         // MULTI/EXEC — иначе сбой между двумя SETEX мог бы записать код
         // без cooldown и тем самым обойти "один код в минуту".
+        // transaction() реально существует и работает на обоих клиентах
+        // (phpredis — свой метод, predis — через __call), просто не
+        // объявлен в @method-докблоке фасада Illuminate\Support\Facades\Redis.
+        // @phpstan-ignore staticMethod.notFound
         Redis::transaction(function ($tx) use ($subject, $code) {
             $tx->setex($this->codeKey($subject), self::CODE_TTL, $code);
             $tx->setex($this->cooldownKey($subject), self::RESEND_COOLDOWN, 1);

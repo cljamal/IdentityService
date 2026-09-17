@@ -12,7 +12,7 @@ use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
-class EmailPasswordStrategy extends PasswordStrategy implements ResetsPassword, NormalizesInput
+class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput, ResetsPassword
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,

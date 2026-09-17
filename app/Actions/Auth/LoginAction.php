@@ -4,10 +4,10 @@ namespace App\Actions\Auth;
 
 use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Guards\IdApiGuard;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -15,9 +15,7 @@ class LoginAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver)
-    {
-    }
+    public function __construct(private readonly AuthStrategyResolver $resolver) {}
 
     /**
      * @throws AuthProviderDisabledException
@@ -35,6 +33,6 @@ class LoginAction
 
         $user = $strategy->authenticate($data);
 
-        return Auth::guard('id-api')->login($user);
+        return IdApiGuard::current()->login($user);
     }
 }

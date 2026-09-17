@@ -4,8 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use RuntimeException;
 
+/**
+ * @property array<string, mixed>|null $meta
+ * @property Carbon|null $verified_at
+ */
 class AuthProvider extends Model
 {
     protected $fillable = ['user_id', 'provider', 'identifier', 'meta', 'verified_at'];
@@ -21,6 +26,9 @@ class AuthProvider extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -29,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
             $table = config('identity.username_password_rescue.table');
 
             if (blank($table)) {
-                return new NullRescueContactResolver();
+                return new NullRescueContactResolver;
             }
 
             return new MetaTableRescueContactResolver(

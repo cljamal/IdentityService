@@ -14,9 +14,7 @@ class RequestPasswordResetAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver)
-    {
-    }
+    public function __construct(private readonly AuthStrategyResolver $resolver) {}
 
     public function handle(AuthProviderName $provider, array $data): void
     {

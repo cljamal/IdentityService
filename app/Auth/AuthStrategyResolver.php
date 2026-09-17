@@ -10,9 +10,7 @@ use LogicException;
 
 class AuthStrategyResolver
 {
-    public function __construct(private readonly Container $container)
-    {
-    }
+    public function __construct(private readonly Container $container) {}
 
     /**
      * @throws AuthProviderDisabledException

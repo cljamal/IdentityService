@@ -22,8 +22,7 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
     public function __construct(
         private readonly OtpRepositoryInterface $otp,
         private readonly AuthProviderRepositoryInterface $providers,
-    ) {
-    }
+    ) {}
 
     /**
      * Flatten to digits-only (998 90 012-34-56 / +998 (90) 012 34 56 /
@@ -75,7 +74,7 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
         $actual = $this->otp->get($phone);
 
         if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException();
+            throw new InvalidOtpException;
         }
 
         $user = $this->providers->firstOrCreateUser(AuthProviderName::PhoneOtp, $phone);
@@ -93,7 +92,7 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
      */
     private function phoneRules(): array
     {
-        return ['required', 'string', 'regex:/^[1-9]\d{8,14}$/', new AllowedPhoneCountry()];
+        return ['required', 'string', 'regex:/^[1-9]\d{8,14}$/', new AllowedPhoneCountry];
     }
 
     private function dispatch(string $phone, string $code): void

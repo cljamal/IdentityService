@@ -16,9 +16,7 @@ class SendVerificationCodeAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver)
-    {
-    }
+    public function __construct(private readonly AuthStrategyResolver $resolver) {}
 
     /**
      * @throws OtpThrottledException|AuthProviderDisabledException|UnsupportedAuthOperationException

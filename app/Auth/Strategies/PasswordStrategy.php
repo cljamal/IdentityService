@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Hash;
  * identity must go through an explicit register() step — authenticate()
  * only ever verifies, it never auto-creates.
  */
-abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity, ChangesPassword
+abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, RegistersIdentity
 {
     /**
      * A valid, arbitrary bcrypt hash used only to keep authenticate()'s
@@ -32,8 +32,7 @@ abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity, Chan
     public function __construct(
         protected readonly AuthProviderRepositoryInterface $providers,
         protected readonly RegistrationVerifier $verification,
-    ) {
-    }
+    ) {}
 
     abstract protected function provider(): AuthProviderName;
 
@@ -57,7 +56,7 @@ abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity, Chan
         $valid = Hash::check($data['password'], $hash);
 
         if (! $identity || ! $valid) {
-            throw new InvalidCredentialsException();
+            throw new InvalidCredentialsException;
         }
 
         if (! $identity->verified_at) {
@@ -130,7 +129,7 @@ abstract class PasswordStrategy implements AuthStrategy, RegistersIdentity, Chan
         $identity = $this->providers->findByUser($this->provider(), $user);
 
         if (! $identity || ! Hash::check($data['current_password'], $identity->meta['password'] ?? '')) {
-            throw new InvalidCredentialsException();
+            throw new InvalidCredentialsException;
         }
 
         $this->providers->updateSecret($identity, ['password' => Hash::make($data['password'])]);

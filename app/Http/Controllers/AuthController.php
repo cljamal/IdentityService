@@ -6,10 +6,10 @@ use App\Actions\Auth\LoginAction;
 use App\Actions\Auth\RegisterAction;
 use App\Actions\Auth\VerifyRegistrationAction;
 use App\Auth\AuthProviderName;
+use App\Auth\Guards\IdApiGuard;
 use App\Http\Resources\Auth\TokenResource;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -51,7 +51,7 @@ class AuthController extends Controller
      */
     public function logout(): MessageResource
     {
-        Auth::guard('id-api')->logout();
+        IdApiGuard::current()->logout();
 
         return MessageResource::make('Successfully logged out');
     }
@@ -61,6 +61,6 @@ class AuthController extends Controller
      */
     public function refresh(): TokenResource
     {
-        return TokenResource::make(Auth::guard('id-api')->refresh());
+        return TokenResource::make(IdApiGuard::current()->refresh());
     }
 }

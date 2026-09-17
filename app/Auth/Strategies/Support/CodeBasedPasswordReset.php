@@ -25,8 +25,7 @@ class CodeBasedPasswordReset
     public function __construct(
         private readonly OtpRepositoryInterface $otp,
         private readonly AuthProviderRepositoryInterface $providers,
-    ) {
-    }
+    ) {}
 
     /**
      * @throws OtpThrottledException
@@ -60,13 +59,13 @@ class CodeBasedPasswordReset
         $actual = $this->otp->get($subject);
 
         if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException();
+            throw new InvalidOtpException;
         }
 
         $identity = $this->providers->findByIdentifier($provider, $identifier);
 
         if (! $identity) {
-            throw new InvalidOtpException();
+            throw new InvalidOtpException;
         }
 
         $this->providers->updateSecret($identity, ['password' => Hash::make($newPassword)]);

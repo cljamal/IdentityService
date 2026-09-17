@@ -2,6 +2,7 @@
 
 namespace App\Auth\Guards;
 
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,9 @@ use PHPOpenSourceSaver\JWTAuth\JWTGuard;
  */
 class IdApiGuard extends JWTGuard
 {
+    /**
+     * @throws BindingResolutionException
+     */
     public static function resolve(Application $app, string $name, array $config): self
     {
         $guard = new self(
@@ -31,6 +35,20 @@ class IdApiGuard extends JWTGuard
         );
 
         $app->refresh('request', $guard, 'setRequest');
+
+        return $guard;
+    }
+
+    /**
+     * Typed accessor for the currently resolved "id-api" guard — PHPStan
+     * only knows Auth::guard() as the generic StatefulGuard contract
+     * (login()/refresh()/getTTL() aren't on it), and this is the one
+     * place that tells it what we actually registered.
+     */
+    public static function current(): self
+    {
+        /** @var self $guard */
+        $guard = Auth::guard('id-api');
 
         return $guard;
     }

@@ -19,8 +19,7 @@ class MetaTableRescueContactResolver implements RescueContactResolver
         private readonly string $keyColumn,
         private readonly string $valueColumn,
         private readonly string $metaKey,
-    ) {
-    }
+    ) {}
 
     public function resolve(User $user): ?string
     {
