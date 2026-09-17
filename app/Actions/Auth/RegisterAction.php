@@ -35,6 +35,6 @@ class RegisterAction
 
         $user = $strategy->register($data);
 
-        return Auth::guard('api')->login($user);
+        return Auth::guard('id-api')->login($user);
     }
 }

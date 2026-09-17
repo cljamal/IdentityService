@@ -15,10 +15,10 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
 
         Route::post('password/forgot', [PasswordResetController::class, 'request'])->middleware('throttle:5,1');
         Route::post('password/reset', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1');
-        Route::post('password/change', ChangePasswordController::class)->middleware('auth:api');
+        Route::post('password/change', ChangePasswordController::class)->middleware('auth:id-api');
     });
 
-    Route::group(['middleware' => 'auth:api'], function () {
+    Route::group(['middleware' => 'auth:id-api'], function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
     });

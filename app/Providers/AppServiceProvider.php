@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Guards\IdApiGuard;
 use App\Auth\Rescue\MetaTableRescueContactResolver;
 use App\Auth\Rescue\NullRescueContactResolver;
 use App\Auth\Rescue\RescueContactResolver;
@@ -10,6 +11,7 @@ use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use App\Repositories\EloquentAuthProviderRepository;
 use App\Repositories\RedisOtpRepository;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -45,6 +47,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Auth::extend('id-api', [IdApiGuard::class, 'resolve']);
     }
 }

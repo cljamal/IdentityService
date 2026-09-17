@@ -12,7 +12,7 @@ class ChangePasswordController extends Controller
 {
     public function __invoke(AuthProviderName $provider, Request $request): MessageResource
     {
-        ChangePasswordAction::run($provider, Auth::guard('api')->user(), $request->all());
+        ChangePasswordAction::run($provider, Auth::guard('id-api')->user(), $request->all());
 
         return MessageResource::make('Пароль изменён.');
     }

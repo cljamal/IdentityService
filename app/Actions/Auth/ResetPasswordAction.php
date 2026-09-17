@@ -30,6 +30,6 @@ class ResetPasswordAction
 
         $user = $strategy->resetPassword($data);
 
-        return Auth::guard('api')->login($user);
+        return Auth::guard('id-api')->login($user);
     }
 }

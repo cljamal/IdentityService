@@ -37,7 +37,7 @@ class AuthController extends Controller
      */
     public function logout(): MessageResource
     {
-        Auth::guard('api')->logout();
+        Auth::guard('id-api')->logout();
 
         return MessageResource::make('Successfully logged out');
     }
@@ -47,6 +47,6 @@ class AuthController extends Controller
      */
     public function refresh(): TokenResource
     {
-        return TokenResource::make(Auth::guard('api')->refresh());
+        return TokenResource::make(Auth::guard('id-api')->refresh());
     }
 }
