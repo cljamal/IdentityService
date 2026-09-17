@@ -47,6 +47,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Auth::extend('id-api', [IdApiGuard::class, 'resolve']);
+        Auth::extend('id-api', IdApiGuard::resolve(...));
     }
 }
