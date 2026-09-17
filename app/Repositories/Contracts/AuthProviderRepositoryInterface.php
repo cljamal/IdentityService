@@ -30,6 +30,11 @@ interface AuthProviderRepositoryInterface
     public function updateSecret(AuthProvider $identity, array $meta): void;
 
     /**
+     * Mark the given user's identity for this provider as verified.
+     */
+    public function markVerified(AuthProviderName $provider, User $user): void;
+
+    /**
      * Create a new user and link it to a new identity record.
      *
      * @param  array  $meta  Provider-specific secret/extra data (e.g. password hash).

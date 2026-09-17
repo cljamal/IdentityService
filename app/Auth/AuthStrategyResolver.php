@@ -20,7 +20,7 @@ class AuthStrategyResolver
      */
     public function resolve(AuthProviderName $provider): AuthStrategy
     {
-        $config = config("auth_providers.providers.{$provider->value}");
+        $config = config("identity.providers.{$provider->value}");
 
         if ($config === null) {
             throw new LogicException("No strategy registered for auth provider [{$provider->value}].");

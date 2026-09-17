@@ -6,13 +6,12 @@ use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\RegistersIdentity;
-use App\Exceptions\Auth\AuthProviderDisabledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class RegisterAction
+class VerifyRegistrationAction
 {
     use AsAction;
 
@@ -20,14 +19,7 @@ class RegisterAction
     {
     }
 
-    /**
-     * @return string|null The token, or null if the identity still needs
-     *                      to be verified before it can be used to log in.
-     *
-     * @throws AuthProviderDisabledException
-     * @throws UnsupportedAuthOperationException
-     */
-    public function handle(AuthProviderName $provider, array $data): ?string
+    public function handle(AuthProviderName $provider, array $data): string
     {
         $strategy = $this->resolver->resolve($provider);
 
@@ -39,14 +31,10 @@ class RegisterAction
             $data = $strategy->normalize($data);
         }
 
-        Validator::make($data, $strategy->registrationRules())->validate();
+        Validator::make($data, $strategy->registrationVerificationRules())->validate();
 
-        $result = $strategy->register($data);
+        $user = $strategy->verifyRegistration($data);
 
-        if (! $result->verified) {
-            return null;
-        }
-
-        return Auth::guard('id-api')->login($result->user);
+        return Auth::guard('id-api')->login($user);
     }
 }

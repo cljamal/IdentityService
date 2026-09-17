@@ -3,9 +3,11 @@
 namespace App\Auth\Strategies;
 
 use App\Auth\AuthProviderName;
+use App\Auth\Rules\AllowedPhoneCountry;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Auth\Strategies\Contracts\AuthStrategy;
 use App\Auth\Strategies\Contracts\IssuesVerificationCode;
+use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
@@ -13,11 +15,9 @@ use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Log;
 
-class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode
+class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, NormalizesInput
 {
     use GeneratesVerificationCode;
-
-    private const PHONE_RULE = ['required', 'string', 'regex:/^\+?[1-9]\d{7,14}$/'];
 
     public function __construct(
         private readonly OtpRepositoryInterface $otp,
@@ -25,9 +25,23 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode
     ) {
     }
 
+    /**
+     * Flatten to digits-only (998 90 012-34-56 / +998 (90) 012 34 56 /
+     * 998(90)0123456 → 998900123456) before anything else touches it —
+     * validation, storage and Redis keys all assume this shape.
+     */
+    public function normalize(array $data): array
+    {
+        if (isset($data['phone']) && is_string($data['phone'])) {
+            $data['phone'] = preg_replace('/\D+/', '', $data['phone']);
+        }
+
+        return $data;
+    }
+
     public function codeRules(): array
     {
-        return ['phone' => self::PHONE_RULE];
+        return ['phone' => $this->phoneRules()];
     }
 
     public function sendCode(array $data): void
@@ -48,7 +62,7 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode
     public function rules(): array
     {
         return [
-            'phone' => self::PHONE_RULE,
+            'phone' => $this->phoneRules(),
             'code' => ['required', 'digits:4'],
         ];
     }
@@ -71,6 +85,15 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode
         $this->otp->forget($phone);
 
         return $user;
+    }
+
+    /**
+     * Digits-only sanity check (post-normalize, so no +/spaces/dashes
+     * survive to here) plus the country allow-list from config.
+     */
+    private function phoneRules(): array
+    {
+        return ['required', 'string', 'regex:/^[1-9]\d{8,14}$/', new AllowedPhoneCountry()];
     }
 
     private function dispatch(string $phone, string $code): void

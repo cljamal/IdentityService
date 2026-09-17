@@ -71,11 +71,20 @@ class CodeBasedPasswordReset
 
         $this->providers->updateSecret($identity, ['password' => Hash::make($newPassword)]);
 
+        $user = $identity->userOrFail();
+
+        // Успешное подтверждение кода на тот же канал — точно такое же
+        // доказательство владения, как и верификация при регистрации.
+        // Иначе аккаунт, ни разу не подтверждённый при регистрации, мог
+        // бы навсегда остаться заблокированным на логине даже после
+        // легитимного сброса пароля через тот же email/rescue-контакт.
+        $this->providers->markVerified($provider, $user);
+
         // Код "сжигаем" только после успешной записи — иначе сбой записи
         // потерял бы уже введённый верный код без всякой пользы для юзера.
         $this->otp->forget($subject);
 
-        return $identity->userOrFail();
+        return $user;
     }
 
     private function subject(AuthProviderName $provider, string $identifier): string

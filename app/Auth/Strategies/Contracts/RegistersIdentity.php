@@ -2,6 +2,7 @@
 
 namespace App\Auth\Strategies\Contracts;
 
+use App\Auth\Strategies\Support\RegistrationResult;
 use App\Models\User;
 
 /**
@@ -17,5 +18,12 @@ interface RegistersIdentity
      */
     public function registrationRules(): array;
 
-    public function register(array $data): User;
+    public function register(array $data): RegistrationResult;
+
+    /**
+     * Validation rules for confirming the code sent after register().
+     */
+    public function registrationVerificationRules(): array;
+
+    public function verifyRegistration(array $data): User;
 }

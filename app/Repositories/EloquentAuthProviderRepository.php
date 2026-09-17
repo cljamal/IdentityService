@@ -53,6 +53,14 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
         ]);
     }
 
+    public function markVerified(AuthProviderName $provider, User $user): void
+    {
+        AuthProvider::query()
+            ->where('provider', $provider->value)
+            ->where('user_id', $user->id)
+            ->update(['verified_at' => now()]);
+    }
+
     public function createUserWithIdentity(
         AuthProviderName $provider,
         string $identifier,

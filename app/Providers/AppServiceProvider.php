@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AuthStrategyResolver::class);
 
         $this->app->bind(RescueContactResolver::class, function () {
-            $table = config('auth_providers.username_password_rescue.table');
+            $table = config('identity.username_password_rescue.table');
 
             if (blank($table)) {
                 return new NullRescueContactResolver();
@@ -34,10 +34,10 @@ class AppServiceProvider extends ServiceProvider
 
             return new MetaTableRescueContactResolver(
                 table: $table,
-                userIdColumn: config('auth_providers.username_password_rescue.user_id_column'),
-                keyColumn: config('auth_providers.username_password_rescue.key_column'),
-                valueColumn: config('auth_providers.username_password_rescue.value_column'),
-                metaKey: config('auth_providers.username_password_rescue.meta_key'),
+                userIdColumn: config('identity.username_password_rescue.user_id_column'),
+                keyColumn: config('identity.username_password_rescue.key_column'),
+                valueColumn: config('identity.username_password_rescue.value_column'),
+                metaKey: config('identity.username_password_rescue.meta_key'),
             );
         });
     }

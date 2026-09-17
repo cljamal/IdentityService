@@ -6,6 +6,7 @@ use App\Auth\AuthProviderName;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;
+use App\Auth\Strategies\Support\RegistrationVerifier;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use Illuminate\Support\Str;
@@ -15,9 +16,10 @@ class EmailPasswordStrategy extends PasswordStrategy implements ResetsPassword, 
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,
+        RegistrationVerifier $verification,
         private readonly CodeBasedPasswordReset $reset,
     ) {
-        parent::__construct($providers);
+        parent::__construct($providers, $verification);
     }
 
     public function rules(): array
@@ -61,6 +63,16 @@ class EmailPasswordStrategy extends PasswordStrategy implements ResetsPassword, 
                     ->where('provider', AuthProviderName::EmailPassword->value),
             ],
         ];
+    }
+
+    /**
+     * Email always has a channel — the address itself.
+     */
+    protected function beginVerification(User $user, string $identifier): bool
+    {
+        $this->verification->send($this->provider(), $identifier, $identifier);
+
+        return false;
     }
 
     public function passwordResetRequestRules(): array

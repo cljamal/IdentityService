@@ -6,6 +6,7 @@ use App\Auth\AuthProviderName;
 use App\Auth\Rescue\RescueContactResolver;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;
+use App\Auth\Strategies\Support\RegistrationVerifier;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
@@ -15,10 +16,11 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,
+        RegistrationVerifier $verification,
         private readonly CodeBasedPasswordReset $reset,
         private readonly RescueContactResolver $rescue,
     ) {
-        parent::__construct($providers);
+        parent::__construct($providers, $verification);
     }
 
     public function rules(): array
@@ -48,6 +50,26 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
                     ->where('provider', AuthProviderName::UsernamePassword->value),
             ],
         ];
+    }
+
+    /**
+     * "username" has no channel of its own — only send a code if we can
+     * resolve a rescue contact for the freshly created user; otherwise
+     * there's nothing to prove ownership of, so auto-verify.
+     */
+    protected function beginVerification(User $user, string $identifier): bool
+    {
+        $contact = $this->rescue->resolve($user);
+
+        if (! $contact) {
+            $this->providers->markVerified($this->provider(), $user);
+
+            return true;
+        }
+
+        $this->verification->send($this->provider(), $identifier, $contact);
+
+        return false;
     }
 
     public function passwordResetRequestRules(): array
@@ -86,11 +108,11 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
 
     /**
      * "username" has no delivery channel of its own — only proceed if a
-     * rescue contact table is actually configured (see config/auth_providers.php).
+     * rescue contact table is actually configured (see config/identity.php).
      */
     private function guardRescueEnabled(): void
     {
-        if (blank(config('auth_providers.username_password_rescue.table'))) {
+        if (blank(config('identity.username_password_rescue.table'))) {
             throw new UnsupportedAuthOperationException($this->provider()->value);
         }
     }

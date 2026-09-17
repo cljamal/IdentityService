@@ -61,4 +61,27 @@ return [
         'meta_key' => env('AUTH_USERNAME_PASSWORD_RESCUE_META_KEY', 'email'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed Phone Countries
+    |--------------------------------------------------------------------------
+    |
+    | Country calling codes allowed to register/login via phone-otp. The
+    | phone is normalized to digits-only (no leading +) before this check
+    | runs, so "code" here must match the start of that flat string, e.g.
+    | "998" matches "998901234567". Toggle "enabled" (or its env var) to
+    | open/close a country without touching code — a disabled/unlisted
+    | country is rejected before anything is validated further or an OTP
+    | is sent.
+    |
+    */
+
+    'phone_countries' => [
+        'uz' => [
+            'name' => 'Uzbekistan',
+            'code' => '998',
+            'enabled' => env('PHONE_COUNTRY_UZ_ENABLED', true),
+        ],
+    ],
+
 ];
