@@ -16,6 +16,9 @@ class RequestPasswordResetAction
 
     public function __construct(private readonly AuthStrategyResolver $resolver) {}
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function handle(AuthProviderName $provider, array $data): void
     {
         $strategy = $this->resolver->resolve($provider);

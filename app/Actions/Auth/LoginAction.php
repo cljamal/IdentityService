@@ -18,6 +18,8 @@ class LoginAction
     public function __construct(private readonly AuthStrategyResolver $resolver) {}
 
     /**
+     * @param  array<string, mixed>  $data
+     *
      * @throws AuthProviderDisabledException
      * @throws BindingResolutionException
      */

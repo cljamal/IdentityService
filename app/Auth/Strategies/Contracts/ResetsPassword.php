@@ -17,11 +17,23 @@ use App\Models\User;
  */
 interface ResetsPassword
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function passwordResetRequestRules(): array;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function requestPasswordReset(array $data): void;
 
+    /**
+     * @return array<string, mixed>
+     */
     public function passwordResetRules(): array;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function resetPassword(array $data): User;
 }

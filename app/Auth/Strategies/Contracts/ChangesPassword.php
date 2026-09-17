@@ -10,7 +10,13 @@ use App\Models\User;
  */
 interface ChangesPassword
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function changePasswordRules(): array;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function changePassword(User $user, array $data): void;
 }

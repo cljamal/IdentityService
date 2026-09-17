@@ -19,6 +19,7 @@ class RegisterAction
     public function __construct(private readonly AuthStrategyResolver $resolver) {}
 
     /**
+     * @param  array<string, mixed>  $data
      * @return string|null The token, or null if the identity still needs
      *                     to be verified before it can be used to log in.
      *

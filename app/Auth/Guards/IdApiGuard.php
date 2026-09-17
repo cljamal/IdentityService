@@ -19,6 +19,8 @@ use PHPOpenSourceSaver\JWTAuth\JWTGuard;
 class IdApiGuard extends JWTGuard
 {
     /**
+     * @param  array<string, mixed>  $config
+     *
      * @throws BindingResolutionException
      */
     public static function resolve(Application $app, string $name, array $config): self

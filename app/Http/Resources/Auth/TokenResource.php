@@ -13,6 +13,9 @@ class TokenResource extends JsonResource
         parent::__construct(null);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         return [

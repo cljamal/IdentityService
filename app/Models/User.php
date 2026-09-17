@@ -17,6 +17,9 @@ class User extends Authenticatable implements JWTSubject
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable;
 
+    /**
+     * @return HasMany<AuthProvider, $this>
+     */
     public function authProviders(): HasMany
     {
         return $this->hasMany(AuthProvider::class);
@@ -32,6 +35,8 @@ class User extends Authenticatable implements JWTSubject
 
     /**
      * Return a key value array, containing any custom claims to be added to the JWT.
+     *
+     * @return array<string, mixed>
      */
     public function getJWTCustomClaims(): array
     {

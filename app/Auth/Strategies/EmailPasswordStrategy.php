@@ -22,6 +22,9 @@ class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput,
         parent::__construct($providers, $verification);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -34,6 +37,9 @@ class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput,
      * Case-fold the email before it's validated/looked up — otherwise
      * "Foo@Bar.com" and "foo@bar.com" could end up as different identities
      * depending on the DB's collation.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
      */
     public function normalize(array $data): array
     {
@@ -54,6 +60,9 @@ class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput,
         return 'email';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function identifierRules(): array
     {
         return [
@@ -75,11 +84,17 @@ class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput,
         return false;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function passwordResetRequestRules(): array
     {
         return ['email' => ['required', 'email']];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function requestPasswordReset(array $data): void
     {
         $email = $data['email'];
@@ -89,6 +104,9 @@ class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput,
         $this->reset->request($this->provider(), $email, $identity ? $email : null);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function passwordResetRules(): array
     {
         return [
@@ -98,6 +116,9 @@ class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput,
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function resetPassword(array $data): User
     {
         return $this->reset->confirm($this->provider(), $data['email'], $data['code'], $data['password']);

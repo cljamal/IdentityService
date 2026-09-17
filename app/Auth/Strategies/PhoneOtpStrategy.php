@@ -28,6 +28,9 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
      * Flatten to digits-only (998 90 012-34-56 / +998 (90) 012 34 56 /
      * 998(90)0123456 → 998900123456) before anything else touches it —
      * validation, storage and Redis keys all assume this shape.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
      */
     public function normalize(array $data): array
     {
@@ -38,11 +41,17 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
         return $data;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function codeRules(): array
     {
         return ['phone' => $this->phoneRules()];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function sendCode(array $data): void
     {
         $phone = $data['phone'];
@@ -58,6 +67,9 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
         $this->dispatch($phone, $code);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -66,6 +78,9 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function authenticate(array $data): User
     {
         $phone = $data['phone'];
@@ -89,6 +104,8 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
     /**
      * Digits-only sanity check (post-normalize, so no +/spaces/dashes
      * survive to here) plus the country allow-list from config.
+     *
+     * @return array<int, mixed>
      */
     private function phoneRules(): array
     {

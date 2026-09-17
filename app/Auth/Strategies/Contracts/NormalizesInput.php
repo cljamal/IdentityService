@@ -10,5 +10,9 @@ namespace App\Auth\Strategies\Contracts;
  */
 interface NormalizesInput
 {
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     public function normalize(array $data): array;
 }

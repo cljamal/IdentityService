@@ -26,6 +26,8 @@ interface AuthProviderRepositoryInterface
 
     /**
      * Merge the given data into the identity's meta (e.g. rotate a password hash).
+     *
+     * @param  array<string, mixed>  $meta
      */
     public function updateSecret(AuthProvider $identity, array $meta): void;
 
@@ -37,7 +39,7 @@ interface AuthProviderRepositoryInterface
     /**
      * Create a new user and link it to a new identity record.
      *
-     * @param  array  $meta  Provider-specific secret/extra data (e.g. password hash).
+     * @param  array<string, mixed>  $meta  Provider-specific secret/extra data (e.g. password hash).
      */
     public function createUserWithIdentity(
         AuthProviderName $provider,

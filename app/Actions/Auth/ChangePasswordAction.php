@@ -19,6 +19,8 @@ class ChangePasswordAction
     public function __construct(private readonly AuthStrategyResolver $resolver) {}
 
     /**
+     * @param  array<string, mixed>  $data
+     *
      * @throws UnsupportedAuthOperationException
      * @throws AuthProviderDisabledException
      * @throws BindingResolutionException

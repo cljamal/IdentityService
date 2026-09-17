@@ -23,6 +23,9 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
         parent::__construct($providers, $verification);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -41,6 +44,9 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
         return 'username';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function identifierRules(): array
     {
         return [
@@ -72,11 +78,17 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
         return false;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function passwordResetRequestRules(): array
     {
         return ['username' => ['required', 'string']];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function requestPasswordReset(array $data): void
     {
         $this->guardRescueEnabled();
@@ -90,6 +102,9 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
         $this->reset->request($this->provider(), $username, $contact);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function passwordResetRules(): array
     {
         return [
@@ -99,6 +114,9 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function resetPassword(array $data): User
     {
         $this->guardRescueEnabled();

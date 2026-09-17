@@ -46,6 +46,9 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
             ->first();
     }
 
+    /**
+     * @param  array<string, mixed>  $meta
+     */
     public function updateSecret(AuthProvider $identity, array $meta): void
     {
         $identity->update([
@@ -61,6 +64,9 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
             ->update(['verified_at' => now()]);
     }
 
+    /**
+     * @param  array<string, mixed>  $meta
+     */
     public function createUserWithIdentity(
         AuthProviderName $provider,
         string $identifier,

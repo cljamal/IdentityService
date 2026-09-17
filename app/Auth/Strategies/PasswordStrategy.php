@@ -42,9 +42,14 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
      * Rules for the identifier alone, including uniqueness — used during
      * registration. rules() (login) intentionally skips the uniqueness
      * check since the identity is expected to already exist there.
+     *
+     * @return array<string, mixed>
      */
     abstract protected function identifierRules(): array;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function authenticate(array $data): User
     {
         $identity = $this->providers->findByIdentifier($this->provider(), $data[$this->identifierField()]);
@@ -66,6 +71,9 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
         return $identity->userOrFail();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function registrationRules(): array
     {
         return [
@@ -74,6 +82,9 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function register(array $data): RegistrationResult
     {
         $identifier = $data[$this->identifierField()];
@@ -103,6 +114,9 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function registrationVerificationRules(): array
     {
         return [
@@ -111,11 +125,17 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function verifyRegistration(array $data): User
     {
         return $this->verification->confirm($this->provider(), $data[$this->identifierField()], $data['code']);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function changePasswordRules(): array
     {
         return [
@@ -124,6 +144,9 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function changePassword(User $user, array $data): void
     {
         $identity = $this->providers->findByUser($this->provider(), $user);

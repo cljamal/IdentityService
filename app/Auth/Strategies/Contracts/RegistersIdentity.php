@@ -15,15 +15,25 @@ interface RegistersIdentity
 {
     /**
      * Validation rules for the registration step.
+     *
+     * @return array<string, mixed>
      */
     public function registrationRules(): array;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function register(array $data): RegistrationResult;
 
     /**
      * Validation rules for confirming the code sent after register().
+     *
+     * @return array<string, mixed>
      */
     public function registrationVerificationRules(): array;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function verifyRegistration(array $data): User;
 }
