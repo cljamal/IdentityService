@@ -3,23 +3,29 @@
 namespace App\Auth\Strategies;
 
 use App\Auth\AuthProviderName;
+use App\Auth\Strategies\Contracts\ConfirmsDeletion;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;
+use App\Auth\Strategies\Support\AccountDeletionConfirmer;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;
 use App\Auth\Strategies\Support\RegistrationVerifier;
+use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
-class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput, ResetsPassword
+class EmailPasswordStrategy extends PasswordStrategy implements ConfirmsDeletion, NormalizesInput, ResetsPassword
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,
         RegistrationVerifier $verification,
+        IdentityChangeLogRepositoryInterface $history,
         private readonly CodeBasedPasswordReset $reset,
+        private readonly AccountDeletionConfirmer $deletion,
     ) {
-        parent::__construct($providers, $verification);
+        parent::__construct($providers, $verification, $history);
     }
 
     /**
@@ -122,5 +128,32 @@ class EmailPasswordStrategy extends PasswordStrategy implements NormalizesInput,
     public function resetPassword(array $data): User
     {
         return $this->reset->confirm($this->provider(), $data['email'], $data['code'], $data['password']);
+    }
+
+    public function requestDeletion(User $user): void
+    {
+        $identity = $this->providers->findByUser($this->provider(), $user);
+
+        if (! $identity) {
+            throw new NoLinkedIdentityException($this->provider()->value);
+        }
+
+        $this->deletion->request($this->provider(), $user, $identity->identifier);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function confirmDeletionRules(): array
+    {
+        return ['code' => ['required', 'digits:4']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function confirmDeletion(User $user, array $data): void
+    {
+        $this->deletion->confirm($this->provider(), $user, $data['code']);
     }
 }

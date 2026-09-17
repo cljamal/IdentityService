@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use RuntimeException;
 
@@ -13,6 +14,8 @@ use RuntimeException;
  */
 class AuthProvider extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['user_id', 'provider', 'identifier', 'meta', 'verified_at'];
 
     /** meta may hold provider-specific secrets (e.g. password hash). */

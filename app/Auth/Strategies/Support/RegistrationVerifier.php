@@ -3,11 +3,13 @@
 namespace App\Auth\Strategies\Support;
 
 use App\Auth\AuthProviderName;
+use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Log;
 
@@ -26,6 +28,7 @@ class RegistrationVerifier
     public function __construct(
         private readonly OtpRepositoryInterface $otp,
         private readonly AuthProviderRepositoryInterface $providers,
+        private readonly IdentityChangeLogRepositoryInterface $history,
     ) {}
 
     /**
@@ -67,6 +70,8 @@ class RegistrationVerifier
         $user = $identity->userOrFail();
 
         $this->providers->markVerified($provider, $user);
+
+        $this->history->log($user, $provider, IdentityChangeAction::Verified, null, $identifier);
 
         $this->otp->forget($subject);
 

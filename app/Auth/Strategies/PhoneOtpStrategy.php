@@ -6,22 +6,32 @@ use App\Auth\AuthProviderName;
 use App\Auth\Rules\AllowedPhoneCountry;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Auth\Strategies\Contracts\AuthStrategy;
+use App\Auth\Strategies\Contracts\ChangesIdentifier;
+use App\Auth\Strategies\Contracts\ConfirmsDeletion;
 use App\Auth\Strategies\Contracts\IssuesVerificationCode;
 use App\Auth\Strategies\Contracts\NormalizesInput;
+use App\Auth\Strategies\Support\AccountDeletionConfirmer;
+use App\Auth\Strategies\Support\PhoneChangeCoordinator;
 use App\Exceptions\Auth\InvalidOtpException;
+use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
-class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, NormalizesInput
+class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier, ConfirmsDeletion, IssuesVerificationCode, NormalizesInput
 {
     use GeneratesVerificationCode;
+
+    private const PHONE_FIELDS = ['phone', 'new_phone'];
 
     public function __construct(
         private readonly OtpRepositoryInterface $otp,
         private readonly AuthProviderRepositoryInterface $providers,
+        private readonly PhoneChangeCoordinator $phoneChange,
+        private readonly AccountDeletionConfirmer $deletion,
     ) {}
 
     /**
@@ -34,8 +44,10 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
      */
     public function normalize(array $data): array
     {
-        if (isset($data['phone']) && is_string($data['phone'])) {
-            $data['phone'] = preg_replace('/\D+/', '', $data['phone']);
+        foreach (self::PHONE_FIELDS as $field) {
+            if (isset($data[$field]) && is_string($data[$field])) {
+                $data[$field] = preg_replace('/\D+/', '', $data[$field]);
+            }
         }
 
         return $data;
@@ -99,6 +111,87 @@ class PhoneOtpStrategy implements AuthStrategy, IssuesVerificationCode, Normaliz
         $this->otp->forget($phone);
 
         return $user;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function changeRules(): array
+    {
+        return [
+            'new_phone' => [
+                ...$this->phoneRules(),
+                Rule::unique('auth_providers', 'identifier')
+                    ->where('provider', AuthProviderName::PhoneOtp->value),
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function requestChange(User $user, array $data): void
+    {
+        $this->phoneChange->requestChange($user, $data['new_phone']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function confirmOldRules(): array
+    {
+        return ['code' => ['required', 'digits:4']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function confirmOld(User $user, array $data): void
+    {
+        $this->phoneChange->confirmOld($user, $data['code']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function confirmNewRules(): array
+    {
+        return ['code' => ['required', 'digits:4']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function confirmNew(User $user, array $data): void
+    {
+        $this->phoneChange->confirmNew($user, $data['code']);
+    }
+
+    public function requestDeletion(User $user): void
+    {
+        $identity = $this->providers->findByUser(AuthProviderName::PhoneOtp, $user);
+
+        if (! $identity) {
+            throw new NoLinkedIdentityException(AuthProviderName::PhoneOtp->value);
+        }
+
+        $this->deletion->request(AuthProviderName::PhoneOtp, $user, $identity->identifier);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function confirmDeletionRules(): array
+    {
+        return ['code' => ['required', 'digits:4']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function confirmDeletion(User $user, array $data): void
+    {
+        $this->deletion->confirm(AuthProviderName::PhoneOtp, $user, $data['code']);
     }
 
     /**

@@ -8,8 +8,10 @@ use App\Auth\Rescue\MetaTableRescueContactResolver;
 use App\Auth\Rescue\NullRescueContactResolver;
 use App\Auth\Rescue\RescueContactResolver;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use App\Repositories\EloquentAuthProviderRepository;
+use App\Repositories\EloquentIdentityChangeLogRepository;
 use App\Repositories\RedisOtpRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(OtpRepositoryInterface::class, RedisOtpRepository::class);
         $this->app->bind(AuthProviderRepositoryInterface::class, EloquentAuthProviderRepository::class);
+        $this->app->bind(IdentityChangeLogRepositoryInterface::class, EloquentIdentityChangeLogRepository::class);
         $this->app->singleton(AuthStrategyResolver::class);
 
         $this->app->bind(RescueContactResolver::class, function () {

@@ -3,11 +3,13 @@
 namespace App\Auth\Strategies\Support;
 
 use App\Auth\AuthProviderName;
+use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +27,7 @@ class CodeBasedPasswordReset
     public function __construct(
         private readonly OtpRepositoryInterface $otp,
         private readonly AuthProviderRepositoryInterface $providers,
+        private readonly IdentityChangeLogRepositoryInterface $history,
     ) {}
 
     /**
@@ -78,6 +81,8 @@ class CodeBasedPasswordReset
         // бы навсегда остаться заблокированным на логине даже после
         // легитимного сброса пароля через тот же email/rescue-контакт.
         $this->providers->markVerified($provider, $user);
+
+        $this->history->log($user, $provider, IdentityChangeAction::PasswordReset, null, null);
 
         // Код "сжигаем" только после успешной записи — иначе сбой записи
         // потерял бы уже введённый верный код без всякой пользы для юзера.

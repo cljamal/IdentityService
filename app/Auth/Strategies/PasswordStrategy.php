@@ -3,6 +3,7 @@
 namespace App\Auth\Strategies;
 
 use App\Auth\AuthProviderName;
+use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Contracts\AuthStrategy;
 use App\Auth\Strategies\Contracts\ChangesPassword;
 use App\Auth\Strategies\Contracts\RegistersIdentity;
@@ -12,6 +13,7 @@ use App\Exceptions\Auth\IdentityNotVerifiedException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -32,6 +34,7 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
     public function __construct(
         protected readonly AuthProviderRepositoryInterface $providers,
         protected readonly RegistrationVerifier $verification,
+        protected readonly IdentityChangeLogRepositoryInterface $history,
     ) {}
 
     abstract protected function provider(): AuthProviderName;
@@ -156,5 +159,7 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
         }
 
         $this->providers->updateSecret($identity, ['password' => Hash::make($data['password'])]);
+
+        $this->history->log($user, $this->provider(), IdentityChangeAction::PasswordChanged, null, null);
     }
 }

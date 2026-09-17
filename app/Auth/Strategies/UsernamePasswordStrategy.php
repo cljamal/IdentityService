@@ -7,9 +7,11 @@ use App\Auth\Rescue\RescueContactResolver;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;
 use App\Auth\Strategies\Support\RegistrationVerifier;
+use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Validation\Rule;
 
 class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPassword
@@ -17,10 +19,11 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
     public function __construct(
         AuthProviderRepositoryInterface $providers,
         RegistrationVerifier $verification,
+        IdentityChangeLogRepositoryInterface $history,
         private readonly CodeBasedPasswordReset $reset,
         private readonly RescueContactResolver $rescue,
     ) {
-        parent::__construct($providers, $verification);
+        parent::__construct($providers, $verification, $history);
     }
 
     /**
@@ -116,6 +119,8 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
 
     /**
      * @param  array<string, mixed>  $data
+     *
+     * @throws UnsupportedAuthOperationException|InvalidOtpException
      */
     public function resetPassword(array $data): User
     {
@@ -127,6 +132,8 @@ class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPasswor
     /**
      * "username" has no delivery channel of its own — only proceed if a
      * rescue contact table is actually configured (see config/identity.php).
+     *
+     * @throws UnsupportedAuthOperationException
      */
     private function guardRescueEnabled(): void
     {

@@ -37,6 +37,19 @@ interface AuthProviderRepositoryInterface
     public function markVerified(AuthProviderName $provider, User $user): void;
 
     /**
+     * Change the identifier on an existing identity (e.g. phone number).
+     */
+    public function changeIdentifier(AuthProvider $identity, string $newIdentifier): void;
+
+    /**
+     * Release every identity linked to the given user (account deletion):
+     * mangles each identifier so its clean value becomes available to
+     * someone else, then soft-deletes the identity record. The original
+     * value is preserved in the identity change log, not on the row itself.
+     */
+    public function releaseAllForUser(User $user): void;
+
+    /**
      * Create a new user and link it to a new identity record.
      *
      * @param  array<string, mixed>  $meta  Provider-specific secret/extra data (e.g. password hash).
