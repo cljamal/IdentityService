@@ -4,6 +4,8 @@ namespace App\Actions\Auth;
 
 use App\Auth\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
+use App\Exceptions\Auth\AuthProviderDisabledException;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -16,6 +18,10 @@ class LoginAction
     {
     }
 
+    /**
+     * @throws AuthProviderDisabledException
+     * @throws BindingResolutionException
+     */
     public function handle(AuthProviderName $provider, array $data): string
     {
         $strategy = $this->resolver->resolve($provider);

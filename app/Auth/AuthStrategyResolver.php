@@ -4,6 +4,7 @@ namespace App\Auth;
 
 use App\Auth\Strategies\Contracts\AuthStrategy;
 use App\Exceptions\Auth\AuthProviderDisabledException;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use LogicException;
 
@@ -13,6 +14,10 @@ class AuthStrategyResolver
     {
     }
 
+    /**
+     * @throws AuthProviderDisabledException
+     * @throws BindingResolutionException
+     */
     public function resolve(AuthProviderName $provider): AuthStrategy
     {
         $config = config("auth_providers.providers.{$provider->value}");
