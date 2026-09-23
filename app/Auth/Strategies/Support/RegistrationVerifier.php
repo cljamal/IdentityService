@@ -2,7 +2,7 @@
 
 namespace App\Auth\Strategies\Support;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Exceptions\Auth\InvalidOtpException;

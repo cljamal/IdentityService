@@ -2,7 +2,7 @@
 
 namespace App\Auth\Strategies;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Rules\AllowedPhoneCountry;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Auth\Strategies\Contracts\AuthStrategy;

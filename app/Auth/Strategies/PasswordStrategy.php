@@ -2,7 +2,7 @@
 
 namespace App\Auth\Strategies;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Contracts\AuthStrategy;
 use App\Auth\Strategies\Contracts\ChangesPassword;

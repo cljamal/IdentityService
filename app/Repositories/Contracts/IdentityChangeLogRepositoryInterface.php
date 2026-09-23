@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Contracts;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Models\User;
 

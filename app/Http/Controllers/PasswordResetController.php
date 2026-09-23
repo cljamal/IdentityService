@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Auth\RequestPasswordResetAction;
 use App\Actions\Auth\ResetPasswordAction;
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Http\Resources\Auth\TokenResource;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;

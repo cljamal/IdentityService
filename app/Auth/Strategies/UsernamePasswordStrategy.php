@@ -2,7 +2,7 @@
 
 namespace App\Auth\Strategies;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Rescue\RescueContactResolver;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;

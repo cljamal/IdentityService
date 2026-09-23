@@ -2,11 +2,12 @@
 
 namespace App\Http\Resources\Auth;
 
+use App\Models\AuthSession;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\AuthSession
+ * @mixin AuthSession
  */
 class SessionResource extends JsonResource
 {

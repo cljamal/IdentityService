@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Auth;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Support\OtpChallenge;
 use App\Auth\Strategies\Support\PhoneChangeCoordinator;

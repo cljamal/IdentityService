@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Auth\LoginAction;
 use App\Actions\Auth\RegisterAction;
 use App\Actions\Auth\VerifyRegistrationAction;
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Guards\IdApiGuard;
 use App\Http\Resources\Auth\TokenResource;
 use App\Http\Resources\MessageResource;

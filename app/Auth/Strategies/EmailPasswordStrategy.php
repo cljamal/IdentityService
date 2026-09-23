@@ -2,7 +2,7 @@
 
 namespace App\Auth\Strategies;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Contracts\ConfirmsDeletion;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;

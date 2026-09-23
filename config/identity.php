@@ -1,6 +1,6 @@
 <?php
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\EmailPasswordStrategy;
 use App\Auth\Strategies\PhoneOtpStrategy;
 use App\Auth\Strategies\UsernamePasswordStrategy;

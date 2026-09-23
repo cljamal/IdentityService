@@ -2,6 +2,7 @@
 
 namespace App\Actions\Auth;
 
+use App\Models\AuthSession;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Support\Collection;
@@ -14,7 +15,7 @@ class ListSessionsAction
     public function __construct(private readonly AuthSessionRepositoryInterface $sessions) {}
 
     /**
-     * @return Collection<int, \App\Models\AuthSession>
+     * @return Collection<int, AuthSession>
      */
     public function handle(User $user, ?string $currentJti): Collection
     {

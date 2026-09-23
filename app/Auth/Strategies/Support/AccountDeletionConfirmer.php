@@ -2,7 +2,7 @@
 
 namespace App\Auth\Strategies\Support;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;

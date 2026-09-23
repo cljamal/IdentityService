@@ -2,7 +2,9 @@
 
 namespace App\Auth\Guards;
 
+use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -85,20 +87,20 @@ class IdApiGuard extends JWTGuard
      * sessions endpoint) is rejected even though it's still
      * cryptographically valid and unexpired.
      *
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
+     * @return Authenticatable|null
      */
     public function user()
     {
         // Same cache parent relies on — also skips re-hitting isRevoked()
         // on every later ->user() call in the same request (most actions
         // here call it again after the auth:id-api middleware already did).
-        if (null !== $this->user) {
+        if ($this->user !== null) {
             return $this->user;
         }
 
         $user = parent::user();
 
-        if (null === $user) {
+        if ($user === null) {
             return null;
         }
 
@@ -122,7 +124,7 @@ class IdApiGuard extends JWTGuard
 
         $payload = $this->getPayload();
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $this->sessions->record(
             $user,
             $payload->get('jti'),
@@ -154,7 +156,7 @@ class IdApiGuard extends JWTGuard
 
         $rotated = $this->sessions->rotate($oldJti, $payload->get('jti'), $expiresAt);
 
-        /** @var \App\Models\User|null $user */
+        /** @var User|null $user */
         $user = $this->getUser();
 
         if (! $rotated && $user) {
@@ -189,7 +191,7 @@ class IdApiGuard extends JWTGuard
 
         parent::logout($forceForever);
 
-        if (null !== $jti) {
+        if ($jti !== null) {
             $this->sessions->revokeByJti($jti);
         }
     }

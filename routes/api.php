@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\IdentifierChangeController;
+use App\Http\Controllers\MeController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\VerificationCodeController;
@@ -35,5 +36,11 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
 
         Route::get('sessions', [SessionController::class, 'index']);
         Route::delete('sessions/{session}', [SessionController::class, 'destroy']);
+
+        // Дебаг-эндпоинт для разработки: показывает раскодированный JWT
+        // текущего запроса. Никогда не регистрируется в проде.
+        if (! app()->environment('production')) {
+            Route::get('me', [MeController::class, 'show']);
+        }
     });
 });

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Auth;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Support\AccountDeletionConfirmer;
 use App\Auth\Strategies\Support\OtpChallenge;
 use App\Exceptions\Auth\InvalidOtpException;

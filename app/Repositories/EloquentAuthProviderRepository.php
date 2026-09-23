@@ -2,8 +2,9 @@
 
 namespace App\Repositories;
 
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
+use App\Events\Auth\UserHasNoRole;
 use App\Exceptions\Auth\IdentifierAlreadyTakenException;
 use App\Models\AuthProvider;
 use App\Models\User;
@@ -114,6 +115,10 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
                 ]);
 
                 $this->history->log($user, $provider, IdentityChangeAction::Registered, null, $identifier);
+
+                if ($user->roles()->doesntExist()) {
+                    UserHasNoRole::dispatch($user);
+                }
 
                 return $user;
             });

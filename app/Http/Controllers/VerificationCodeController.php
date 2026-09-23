@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Auth\SendVerificationCodeAction;
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
 

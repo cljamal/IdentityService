@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Auth\ConfirmNewIdentifierAction;
 use App\Actions\Auth\ConfirmOldIdentifierAction;
 use App\Actions\Auth\RequestIdentifierChangeAction;
-use App\Auth\AuthProviderName;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Guards\IdApiGuard;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
