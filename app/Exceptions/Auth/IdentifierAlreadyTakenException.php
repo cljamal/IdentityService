@@ -22,6 +22,6 @@ class IdentifierAlreadyTakenException extends Exception
 
     public function render(Request $request): JsonResponse
     {
-        return response()->json(['message' => 'Этот email/username уже занят.'], 422);
+        return response()->json(['message' => 'Этот идентификатор уже занят.'], 422);
     }
 }

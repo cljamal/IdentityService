@@ -102,7 +102,7 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
         bool $verified = false,
     ): User {
         try {
-            $user = DB::transaction(function () use ($provider, $identifier, $meta, $verified) {
+            return DB::transaction(function () use ($provider, $identifier, $meta, $verified) {
                 $user = User::query()->create([]);
 
                 AuthProvider::query()->create([
@@ -113,14 +113,12 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
                     'verified_at' => $verified ? now() : null,
                 ]);
 
+                $this->history->log($user, $provider, IdentityChangeAction::Registered, null, $identifier);
+
                 return $user;
             });
         } catch (UniqueConstraintViolationException) {
             throw new IdentifierAlreadyTakenException($identifier);
         }
-
-        $this->history->log($user, $provider, IdentityChangeAction::Registered, null, $identifier);
-
-        return $user;
     }
 }

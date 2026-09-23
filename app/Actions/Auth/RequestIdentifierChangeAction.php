@@ -32,7 +32,7 @@ class RequestIdentifierChangeAction
             $data = $strategy->normalize($data);
         }
 
-        Validator::make($data, $strategy->changeRules())->validate();
+        Validator::make($data, $strategy->changeRules($user))->validate();
 
         $strategy->requestChange($user, $data);
     }

@@ -116,13 +116,16 @@ class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier, ConfirmsDelet
     /**
      * @return array<string, mixed>
      */
-    public function changeRules(): array
+    public function changeRules(User $user): array
     {
+        $identity = $this->providers->findByUser(AuthProviderName::PhoneOtp, $user);
+
         return [
             'new_phone' => [
                 ...$this->phoneRules(),
                 Rule::unique('auth_providers', 'identifier')
-                    ->where('provider', AuthProviderName::PhoneOtp->value),
+                    ->where('provider', AuthProviderName::PhoneOtp->value)
+                    ->ignore($identity?->id),
             ],
         ];
     }

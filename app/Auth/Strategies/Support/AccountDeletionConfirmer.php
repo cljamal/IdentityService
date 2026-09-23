@@ -3,11 +3,9 @@
 namespace App\Auth\Strategies\Support;
 
 use App\Auth\AuthProviderName;
-use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
-use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,23 +15,14 @@ use Illuminate\Support\Facades\Log;
  */
 class AccountDeletionConfirmer
 {
-    use GeneratesVerificationCode;
-
-    public function __construct(private readonly OtpRepositoryInterface $otp) {}
+    public function __construct(private readonly OtpChallenge $challenge) {}
 
     /**
      * @throws OtpThrottledException
      */
     public function request(AuthProviderName $provider, User $user, string $contact): void
     {
-        $subject = $this->subject($provider, $user);
-
-        if (! $this->otp->canBeRequested($subject)) {
-            throw new OtpThrottledException($this->otp->secondsUntilNextRequest($subject));
-        }
-
-        $code = $this->generateCode();
-        $this->otp->put($subject, $code);
+        $code = $this->challenge->request($this->subject($provider, $user));
 
         // TODO: подключить реальный email/SMS-шлюз вместо лога.
         Log::info("Account deletion confirmation code for {$contact}: {$code}");
@@ -45,13 +34,9 @@ class AccountDeletionConfirmer
     public function confirm(AuthProviderName $provider, User $user, string $code): void
     {
         $subject = $this->subject($provider, $user);
-        $actual = $this->otp->get($subject);
 
-        if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException;
-        }
-
-        $this->otp->forget($subject);
+        $this->challenge->verify($subject, $code);
+        $this->challenge->forget($subject);
     }
 
     private function subject(AuthProviderName $provider, User $user): string

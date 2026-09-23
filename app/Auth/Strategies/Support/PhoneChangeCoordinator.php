@@ -4,7 +4,6 @@ namespace App\Auth\Strategies\Support;
 
 use App\Auth\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
-use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Exceptions\Auth\OtpThrottledException;
@@ -23,9 +22,8 @@ use Illuminate\Support\Facades\Log;
  */
 class PhoneChangeCoordinator
 {
-    use GeneratesVerificationCode;
-
     public function __construct(
+        private readonly OtpChallenge $challenge,
         private readonly OtpRepositoryInterface $otp,
         private readonly AuthProviderRepositoryInterface $providers,
         private readonly IdentityChangeLogRepositoryInterface $history,
@@ -43,14 +41,7 @@ class PhoneChangeCoordinator
             throw new NoLinkedIdentityException(AuthProviderName::PhoneOtp->value);
         }
 
-        $oldSubject = $this->oldSubject($user);
-
-        if (! $this->otp->canBeRequested($oldSubject)) {
-            throw new OtpThrottledException($this->otp->secondsUntilNextRequest($oldSubject));
-        }
-
-        $code = $this->generateCode();
-        $this->otp->put($oldSubject, $code);
+        $code = $this->challenge->request($this->oldSubject($user));
         $this->otp->put($this->pendingSubject($user), $newPhone);
 
         // TODO: подключить реальный SMS-шлюз вместо лога.
@@ -63,12 +54,7 @@ class PhoneChangeCoordinator
      */
     public function confirmOld(User $user, string $code): void
     {
-        $oldSubject = $this->oldSubject($user);
-        $actual = $this->otp->get($oldSubject);
-
-        if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException;
-        }
+        $this->challenge->verify($this->oldSubject($user), $code);
 
         $newPhone = $this->otp->get($this->pendingSubject($user));
 
@@ -76,17 +62,15 @@ class PhoneChangeCoordinator
             throw new InvalidOtpException;
         }
 
-        $newSubject = $this->newSubject($user);
+        $newCode = $this->challenge->request($this->newSubject($user));
 
-        if (! $this->otp->canBeRequested($newSubject)) {
-            throw new OtpThrottledException($this->otp->secondsUntilNextRequest($newSubject));
-        }
+        // Re-stash the pending number so its TTL restarts alongside the NEW
+        // code issued above — otherwise it would still expire on the OLD
+        // code's original TTL window, before the user can ever reach it.
+        $this->otp->put($this->pendingSubject($user), $newPhone);
 
         // Старый код одноразовый — подтверждён, больше не нужен.
-        $this->otp->forget($oldSubject);
-
-        $newCode = $this->generateCode();
-        $this->otp->put($newSubject, $newCode);
+        $this->challenge->forget($this->oldSubject($user));
 
         // TODO: подключить реальный SMS-шлюз вместо лога.
         Log::info("Phone change: code for NEW number {$newPhone}: {$newCode}");
@@ -97,12 +81,7 @@ class PhoneChangeCoordinator
      */
     public function confirmNew(User $user, string $code): void
     {
-        $newSubject = $this->newSubject($user);
-        $actual = $this->otp->get($newSubject);
-
-        if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException;
-        }
+        $this->challenge->verify($this->newSubject($user), $code);
 
         $newPhone = $this->otp->get($this->pendingSubject($user));
 
@@ -122,7 +101,7 @@ class PhoneChangeCoordinator
 
         $this->history->log($user, AuthProviderName::PhoneOtp, IdentityChangeAction::IdentifierChanged, $oldPhone, $newPhone);
 
-        $this->otp->forget($newSubject);
+        $this->challenge->forget($this->newSubject($user));
         $this->otp->forget($this->pendingSubject($user));
     }
 

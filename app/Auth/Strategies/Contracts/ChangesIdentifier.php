@@ -15,7 +15,7 @@ interface ChangesIdentifier
     /**
      * @return array<string, mixed>
      */
-    public function changeRules(): array;
+    public function changeRules(User $user): array;
 
     /**
      * @param  array<string, mixed>  $data
