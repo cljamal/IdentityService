@@ -2,6 +2,7 @@
 
 namespace App\Auth;
 
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Contracts\AuthStrategy;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use Illuminate\Contracts\Container\BindingResolutionException;
