@@ -5,14 +5,16 @@ namespace App\Auth\Strategies\Support;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
+use App\Events\Notifications\OtpCodeIssued;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
+use App\Notifications\Otp\OtpDestination;
+use App\Notifications\Otp\OtpPurpose;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Shared request/confirm mechanics for a code-based password reset,
@@ -33,7 +35,7 @@ final readonly class CodeBasedPasswordReset
     /**
      * @throws OtpThrottledException
      */
-    public function request(AuthProviderName $provider, string $identifier, ?string $contact): void
+    public function request(AuthProviderName $provider, string $identifier, ?OtpDestination $destination): void
     {
         $subject = $this->subject($provider, $identifier);
 
@@ -43,13 +45,12 @@ final readonly class CodeBasedPasswordReset
 
         $code = $this->generateCode();
 
-        // Всегда пишем код и cooldown, даже если $contact пуст — иначе по
-        // разнице в throttling можно понять, существует ли identity/контакт.
+        // Всегда пишем код и cooldown, даже если $destination пуст — иначе
+        // по разнице в throttling можно понять, существует ли identity/контакт.
         $this->otp->put($subject, $code);
 
-        if ($contact) {
-            // TODO: подключить реальный email/SMS-шлюз вместо лога.
-            Log::info("Password reset code for {$contact}: {$code}");
+        if ($destination !== null) {
+            OtpCodeIssued::dispatch($destination, $code, OtpPurpose::PasswordReset);
         }
     }
 

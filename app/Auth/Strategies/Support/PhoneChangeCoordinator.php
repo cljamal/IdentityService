@@ -4,14 +4,17 @@ namespace App\Auth\Strategies\Support;
 
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
+use App\Events\Notifications\OtpCodeIssued;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
+use App\Notifications\Otp\OtpChannel;
+use App\Notifications\Otp\OtpDestination;
+use App\Notifications\Otp\OtpPurpose;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
-use Illuminate\Support\Facades\Log;
 
 /**
  * 3-step phone change: OTP to the OLD number proves the requester still
@@ -44,8 +47,11 @@ final readonly class PhoneChangeCoordinator
         $code = $this->challenge->request($this->oldSubject($user));
         $this->otp->put($this->pendingSubject($user), $newPhone);
 
-        // TODO: подключить реальный SMS-шлюз вместо лога.
-        Log::info("Phone change: code for OLD number {$identity->identifier}: {$code}");
+        OtpCodeIssued::dispatch(
+            new OtpDestination(OtpChannel::Phone, $identity->identifier),
+            $code,
+            OtpPurpose::IdentifierChangeOld,
+        );
     }
 
     /**
@@ -72,8 +78,11 @@ final readonly class PhoneChangeCoordinator
         // Старый код одноразовый — подтверждён, больше не нужен.
         $this->challenge->forget($this->oldSubject($user));
 
-        // TODO: подключить реальный SMS-шлюз вместо лога.
-        Log::info("Phone change: code for NEW number {$newPhone}: {$newCode}");
+        OtpCodeIssued::dispatch(
+            new OtpDestination(OtpChannel::Phone, $newPhone),
+            $newCode,
+            OtpPurpose::IdentifierChangeNew,
+        );
     }
 
     /**

@@ -2,19 +2,20 @@
 
 namespace App\Exceptions\Auth;
 
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
-final class IdentityNotVerifiedException extends Exception
+final class IdentityNotVerifiedException extends AuthException
 {
     public function __construct(string $provider)
     {
         parent::__construct("Identity for provider [{$provider}] is not verified yet.");
     }
 
-    public function render(Request $request): JsonResponse
+    public function errorCode(): AuthErrorCode
     {
-        return response()->json(['message' => 'Подтвердите владение аккаунтом перед входом.'], 403);
+        return AuthErrorCode::IdentityNotVerified;
+    }
+
+    public function statusCode(): int
+    {
+        return 403;
     }
 }

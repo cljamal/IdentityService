@@ -2,19 +2,20 @@
 
 namespace App\Exceptions\Auth;
 
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
-final class AuthProviderDisabledException extends Exception
+final class AuthProviderDisabledException extends AuthException
 {
     public function __construct(string $provider)
     {
         parent::__construct("Provider [{$provider}] is currently disabled.");
     }
 
-    public function render(Request $request): JsonResponse
+    public function errorCode(): AuthErrorCode
     {
-        return response()->json(['message' => $this->getMessage()], 404);
+        return AuthErrorCode::AuthProviderDisabled;
+    }
+
+    public function statusCode(): int
+    {
+        return 404;
     }
 }

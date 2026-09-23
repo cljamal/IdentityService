@@ -2,21 +2,20 @@
 
 namespace App\Exceptions\Auth;
 
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
-final class InvalidOtpException extends Exception
+final class InvalidOtpException extends AuthException
 {
     public function __construct()
     {
         parent::__construct('Invalid or expired OTP code.');
     }
 
-    public function render(Request $request): JsonResponse
+    public function errorCode(): AuthErrorCode
     {
-        return response()->json([
-            'message' => 'Неверный или истёкший код подтверждения.',
-        ], 422);
+        return AuthErrorCode::InvalidOtp;
+    }
+
+    public function statusCode(): int
+    {
+        return 422;
     }
 }

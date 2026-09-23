@@ -2,23 +2,24 @@
 
 namespace App\Exceptions\Auth;
 
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
 /**
  * The authenticated user has no identity for this provider to change
  * (e.g. they logged in via email-password and never linked a phone).
  */
-final class NoLinkedIdentityException extends Exception
+final class NoLinkedIdentityException extends AuthException
 {
     public function __construct(string $provider)
     {
         parent::__construct("No {$provider} identity linked to this account.");
     }
 
-    public function render(Request $request): JsonResponse
+    public function errorCode(): AuthErrorCode
     {
-        return response()->json(['message' => $this->getMessage()], 400);
+        return AuthErrorCode::NoLinkedIdentity;
+    }
+
+    public function statusCode(): int
+    {
+        return 400;
     }
 }

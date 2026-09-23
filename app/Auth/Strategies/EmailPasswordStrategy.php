@@ -11,6 +11,8 @@ use App\Auth\Strategies\Support\CodeBasedPasswordReset;
 use App\Auth\Strategies\Support\RegistrationVerifier;
 use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Models\User;
+use App\Notifications\Otp\OtpChannel;
+use App\Notifications\Otp\OtpDestination;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Str;
@@ -85,7 +87,7 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
      */
     protected function beginVerification(User $user, string $identifier): bool
     {
-        $this->verification->send($this->provider(), $identifier, $identifier);
+        $this->verification->send($this->provider(), $identifier, new OtpDestination(OtpChannel::Email, $identifier));
 
         return false;
     }
@@ -107,7 +109,7 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
         $identity = $this->providers->findByIdentifier($this->provider(), $email);
 
         // Канал доставки для email-password — сам identifier.
-        $this->reset->request($this->provider(), $email, $identity ? $email : null);
+        $this->reset->request($this->provider(), $email, $identity ? new OtpDestination(OtpChannel::Email, $email) : null);
     }
 
     /**
@@ -138,7 +140,7 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
             throw new NoLinkedIdentityException($this->provider()->value);
         }
 
-        $this->deletion->request($this->provider(), $user, $identity->identifier);
+        $this->deletion->request($this->provider(), $user, new OtpDestination(OtpChannel::Email, $identity->identifier));
     }
 
     /**

@@ -12,6 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // Default attributes put /broadcasting/auth behind session/CSRF ('web'
+    // middleware) — this API is stateless JWT only, so it needs to sit
+    // under /api and authenticate via our own "id-api" guard instead.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['prefix' => 'api', 'middleware' => ['api', 'auth:id-api']],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         //
     })

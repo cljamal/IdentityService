@@ -1,58 +1,79 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Identity Service
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Стейтлесс JWT-сервис идентификации: регистрация/логин по телефону (OTP), email+пароль
+и username+пароль, смена и восстановление пароля, смена идентификатора (телефона),
+удаление аккаунта, роли (spatie/laravel-permission) и учёт активных сессий по токенам.
 
-## About Laravel
+Аутентификация — свой гвард `id-api` (`app/Auth/Guards/IdApiGuard.php`) поверх
+`php-open-source-saver/jwt-auth`, не сессии/куки Laravel.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Требования
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.3+, Composer
+- Redis — обязателен: на нём держатся OTP-коды, сессии, кэш и роли/права
+  (`SESSION_DRIVER`, `CACHE_STORE` = `redis`)
+- SQLite (по умолчанию) или любая другая БД, поддерживаемая Laravel
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Установка
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Дальше — JWT-ключ. Один из двух вариантов (см. блок JWT в `.env.example`):
 
-## Contributing
+```bash
+# HS256 (проще всего для локальной разработки)
+php artisan jwt:secret
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+или RS256 через `JWT_ALGO=RS256` + `JWT_PUBLIC_KEY`/`JWT_PRIVATE_KEY`
+(`php artisan jwt:generate-certs`).
 
-## Code of Conduct
+```bash
+touch database/database.sqlite   # если DB_CONNECTION=sqlite
+php artisan migrate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Запуск: `php artisan serve` (или `composer dev`, поднимает сервер + очередь + логи разом).
 
-## Security Vulnerabilities
+## Провайдеры идентификации
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Три провайдера, каждый включается/выключается независимо
+(`config/identity.php`, `AUTH_PROVIDER_*_ENABLED`):
 
-## License
+| Провайдер          | Логин по               | Регистрация       | Восстановление пароля |
+|---------------------|-------------------------|--------------------|-------------------------|
+| `phone-otp`          | телефон + одноразовый код | не нужна (auto)   | —                       |
+| `email-password`     | email + пароль          | нужна верификация | по коду на email        |
+| `username-password`  | username + пароль       | опционально верифиц. | нужен rescue-контакт (см. ниже) |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`username` не имеет собственного канала доставки — восстановление пароля для него
+работает только если настроить `AUTH_USERNAME_PASSWORD_RESCUE_TABLE` (см. `.env.example`).
+Без этого `password/forgot` для username всегда отвечает 400 — это ожидаемое поведение,
+а не баг.
+
+## API
+
+Все роуты под `/api/auth/{provider}/...`, где `{provider}` — `phone-otp`,
+`email-password` или `username-password`. Полный список — `routes/api.php`.
+Дев-эндпоинт `GET /api/auth/me` (раскодированный JWT текущего запроса) не
+работает при `APP_ENV=production`.
+
+Коллекция запросов для Bruno — `dev/IdentityService/`.
+
+## Тесты и статический анализ
+
+```bash
+composer test       # PHPUnit
+composer analyze     # PHPStan (larastan), level 6
+composer pint        # code style
+```
+
+## Известные ограничения
+
+- Доставка OTP-кодов (SMS/email) пока не подключена к реальному шлюзу — коды
+  уходят в лог (`storage/logs/laravel.log`). В `local`-окружении код всегда `1111`.
+- CI не настроен — раскатка/репозиторий для неё пока не готовы.

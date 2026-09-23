@@ -3,6 +3,7 @@
 namespace App\Auth\Rescue;
 
 use App\Models\User;
+use App\Notifications\Otp\OtpDestination;
 
 /**
  * Resolves an out-of-band contact (e.g. email) to send a password-reset
@@ -11,5 +12,5 @@ use App\Models\User;
  */
 interface RescueContactResolver
 {
-    public function resolve(User $user): ?string;
+    public function resolve(User $user): ?OtpDestination;
 }

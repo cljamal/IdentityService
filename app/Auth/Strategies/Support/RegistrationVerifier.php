@@ -5,13 +5,15 @@ namespace App\Auth\Strategies\Support;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
+use App\Events\Notifications\OtpCodeIssued;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
+use App\Notifications\Otp\OtpDestination;
+use App\Notifications\Otp\OtpPurpose;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Request/confirm mechanics for proving ownership of an identifier right
@@ -34,7 +36,7 @@ final readonly class RegistrationVerifier
     /**
      * @throws OtpThrottledException
      */
-    public function send(AuthProviderName $provider, string $identifier, string $contact): void
+    public function send(AuthProviderName $provider, string $identifier, OtpDestination $destination): void
     {
         $subject = $this->subject($provider, $identifier);
 
@@ -45,8 +47,7 @@ final readonly class RegistrationVerifier
         $code = $this->generateCode();
         $this->otp->put($subject, $code);
 
-        // TODO: подключить реальный email/SMS-шлюз вместо лога.
-        Log::info("Registration verification code for {$contact}: {$code}");
+        OtpCodeIssued::dispatch($destination, $code, OtpPurpose::Registration);
     }
 
     /**

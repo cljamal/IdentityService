@@ -2,19 +2,20 @@
 
 namespace App\Exceptions\Auth;
 
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
-final class UnsupportedAuthOperationException extends Exception
+final class UnsupportedAuthOperationException extends AuthException
 {
     public function __construct(string $provider)
     {
         parent::__construct("Provider [{$provider}] does not support this operation.");
     }
 
-    public function render(Request $request): JsonResponse
+    public function errorCode(): AuthErrorCode
     {
-        return response()->json(['message' => $this->getMessage()], 400);
+        return AuthErrorCode::UnsupportedAuthOperation;
+    }
+
+    public function statusCode(): int
+    {
+        return 400;
     }
 }

@@ -12,13 +12,16 @@ use App\Auth\Strategies\Contracts\IssuesVerificationCode;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Support\AccountDeletionConfirmer;
 use App\Auth\Strategies\Support\PhoneChangeCoordinator;
+use App\Events\Notifications\OtpCodeIssued;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
+use App\Notifications\Otp\OtpChannel;
+use App\Notifications\Otp\OtpDestination;
+use App\Notifications\Otp\OtpPurpose;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier, ConfirmsDeletion, IssuesVerificationCode, NormalizesInput
@@ -76,7 +79,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
 
         $this->otp->put($phone, $code);
 
-        $this->dispatch($phone, $code);
+        OtpCodeIssued::dispatch(new OtpDestination(OtpChannel::Phone, $phone), $code, OtpPurpose::Login);
     }
 
     /**
@@ -178,7 +181,11 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
             throw new NoLinkedIdentityException(AuthProviderName::PhoneOtp->value);
         }
 
-        $this->deletion->request(AuthProviderName::PhoneOtp, $user, $identity->identifier);
+        $this->deletion->request(
+            AuthProviderName::PhoneOtp,
+            $user,
+            new OtpDestination(OtpChannel::Phone, $identity->identifier),
+        );
     }
 
     /**
@@ -206,11 +213,5 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     private function phoneRules(): array
     {
         return ['required', 'string', 'regex:/^[1-9]\d{8,14}$/', new AllowedPhoneCountry];
-    }
-
-    private function dispatch(string $phone, string $code): void
-    {
-        // TODO: подключить реальный SMS-шлюз вместо лога.
-        Log::info("OTP for {$phone}: {$code}");
     }
 }

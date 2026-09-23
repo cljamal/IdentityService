@@ -3,15 +3,15 @@
 namespace App\Auth\Rescue;
 
 use App\Models\User;
+use App\Notifications\Otp\OtpDestination;
 
 /**
- * Default when no rescue table is configured. Strategies still gate the
- * feature explicitly (see UsernamePasswordStrategy::guardRescueEnabled),
- * this just guarantees a safe, always-constructible dependency.
+ * Always-empty resolver — a safe, always-constructible base case for
+ * ChainedRescueContactResolver when nothing else is configured.
  */
 final class NullRescueContactResolver implements RescueContactResolver
 {
-    public function resolve(User $user): ?string
+    public function resolve(User $user): ?OtpDestination
     {
         return null;
     }

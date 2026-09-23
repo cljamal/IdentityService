@@ -8,7 +8,6 @@ use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;
 use App\Auth\Strategies\Support\RegistrationVerifier;
 use App\Exceptions\Auth\InvalidOtpException;
-use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
@@ -68,15 +67,15 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
      */
     protected function beginVerification(User $user, string $identifier): bool
     {
-        $contact = $this->rescue->resolve($user);
+        $destination = $this->rescue->resolve($user);
 
-        if (! $contact) {
+        if (! $destination) {
             $this->providers->markVerified($this->provider(), $user);
 
             return true;
         }
 
-        $this->verification->send($this->provider(), $identifier, $contact);
+        $this->verification->send($this->provider(), $identifier, $destination);
 
         return false;
     }
@@ -94,15 +93,17 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
      */
     public function requestPasswordReset(array $data): void
     {
-        $this->guardRescueEnabled();
-
         $username = $data['username'];
         $identity = $this->providers->findByIdentifier($this->provider(), $username);
         // Orphaned identity (user удалён) должна выглядеть так же, как
         // "не найдено" — иначе TypeError/500 сам стал бы каналом энумерации.
-        $contact = $identity?->user ? $this->rescue->resolve($identity->user) : null;
+        // Без рескью-контакта (не связан ни один другой провайдер и не
+        // настроена rescue-таблица) код всё равно создаётся и сохраняется
+        // ниже — просто никому не будет отправлен: то же самое разделение
+        // "existence vs delivery", что и у email-password.
+        $destination = $identity?->user ? $this->rescue->resolve($identity->user) : null;
 
-        $this->reset->request($this->provider(), $username, $contact);
+        $this->reset->request($this->provider(), $username, $destination);
     }
 
     /**
@@ -120,25 +121,10 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
     /**
      * @param  array<string, mixed>  $data
      *
-     * @throws UnsupportedAuthOperationException|InvalidOtpException
+     * @throws InvalidOtpException
      */
     public function resetPassword(array $data): User
     {
-        $this->guardRescueEnabled();
-
         return $this->reset->confirm($this->provider(), $data['username'], $data['code'], $data['password']);
-    }
-
-    /**
-     * "username" has no delivery channel of its own — only proceed if a
-     * rescue contact table is actually configured (see config/identity.php).
-     *
-     * @throws UnsupportedAuthOperationException
-     */
-    private function guardRescueEnabled(): void
-    {
-        if (blank(config('identity.username_password_rescue.table'))) {
-            throw new UnsupportedAuthOperationException($this->provider()->value);
-        }
     }
 }

@@ -3,10 +3,12 @@
 namespace App\Auth\Strategies\Support;
 
 use App\Auth\Enums\AuthProviderName;
+use App\Events\Notifications\OtpCodeIssued;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
+use App\Notifications\Otp\OtpDestination;
+use App\Notifications\Otp\OtpPurpose;
 
 /**
  * Request/confirm mechanics for proving the account holder still controls
@@ -20,12 +22,11 @@ final readonly class AccountDeletionConfirmer
     /**
      * @throws OtpThrottledException
      */
-    public function request(AuthProviderName $provider, User $user, string $contact): void
+    public function request(AuthProviderName $provider, User $user, OtpDestination $destination): void
     {
         $code = $this->challenge->request($this->subject($provider, $user));
 
-        // TODO: подключить реальный email/SMS-шлюз вместо лога.
-        Log::info("Account deletion confirmation code for {$contact}: {$code}");
+        OtpCodeIssued::dispatch($destination, $code, OtpPurpose::AccountDeletion);
     }
 
     /**

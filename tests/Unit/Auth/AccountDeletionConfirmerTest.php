@@ -7,6 +7,8 @@ use App\Auth\Strategies\Support\AccountDeletionConfirmer;
 use App\Auth\Strategies\Support\OtpChallenge;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Models\User;
+use App\Notifications\Otp\OtpChannel;
+use App\Notifications\Otp\OtpDestination;
 use Tests\Fakes\FakeOtpRepository;
 use Tests\TestCase;
 
@@ -20,7 +22,7 @@ class AccountDeletionConfirmerTest extends TestCase
         $otp = new FakeOtpRepository;
         $confirmer = new AccountDeletionConfirmer(new OtpChallenge($otp));
 
-        $confirmer->request(AuthProviderName::PhoneOtp, $user, '998901234567');
+        $confirmer->request(AuthProviderName::PhoneOtp, $user, new OtpDestination(OtpChannel::Phone, '998901234567'));
         $code = $otp->peek('phone-otp-delete:1');
 
         $confirmer->confirm(AuthProviderName::PhoneOtp, $user, $code);
@@ -39,7 +41,7 @@ class AccountDeletionConfirmerTest extends TestCase
         $otp = new FakeOtpRepository;
         $confirmer = new AccountDeletionConfirmer(new OtpChallenge($otp));
 
-        $confirmer->request(AuthProviderName::PhoneOtp, $user, '998901234567');
+        $confirmer->request(AuthProviderName::PhoneOtp, $user, new OtpDestination(OtpChannel::Phone, '998901234567'));
 
         $this->expectException(InvalidOtpException::class);
 

@@ -2,19 +2,20 @@
 
 namespace App\Exceptions\Auth;
 
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-
-final class InvalidCredentialsException extends Exception
+final class InvalidCredentialsException extends AuthException
 {
     public function __construct()
     {
         parent::__construct('Invalid credentials.');
     }
 
-    public function render(Request $request): JsonResponse
+    public function errorCode(): AuthErrorCode
     {
-        return response()->json(['message' => 'Неверный логин или пароль.'], 401);
+        return AuthErrorCode::InvalidCredentials;
+    }
+
+    public function statusCode(): int
+    {
+        return 401;
     }
 }
