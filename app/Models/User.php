@@ -20,7 +20,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
- *
  * @property-read Collection<int, AuthProvider> $authProviders
  */
 #[Fillable(['name'])]

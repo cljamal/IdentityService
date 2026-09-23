@@ -17,7 +17,6 @@ use Illuminate\Support\Carbon;
  * @property string|null $from_value
  * @property string|null $to_value
  * @property Carbon $created_at
- *
  * @property-read User|null $user
  */
 class IdentityChangeLog extends Model

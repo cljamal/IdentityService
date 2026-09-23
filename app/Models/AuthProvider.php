@@ -18,7 +18,6 @@ use RuntimeException;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
- *
  * @property-read User|null $user
  */
 class AuthProvider extends Model

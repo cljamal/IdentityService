@@ -2,8 +2,8 @@
 
 namespace App\Actions\Auth;
 
-use App\Auth\Enums\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Contracts\ChangesIdentifier;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;

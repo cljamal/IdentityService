@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
 use PHPOpenSourceSaver\JWTAuth\JWT;
 use PHPOpenSourceSaver\JWTAuth\JWTGuard;
 use PHPOpenSourceSaver\JWTAuth\Token;
@@ -86,14 +87,9 @@ final class IdApiGuard extends JWTGuard
      * As parent, but a token whose jti was explicitly revoked (via the
      * sessions endpoint) is rejected even though it's still
      * cryptographically valid and unexpired.
-     *
-     * @return Authenticatable|null
      */
     public function user(): ?Authenticatable
     {
-        // Same cache parent relies on — also skips re-hitting isRevoked()
-        // on every later ->user() call in the same request (most actions
-        // here call it again after the auth:id-api middleware already did).
         if ($this->user !== null) {
             return $this->user;
         }
@@ -115,10 +111,8 @@ final class IdApiGuard extends JWTGuard
 
     /**
      * As parent, but also records the freshly issued token as a session.
-     *
-     * @return string
      */
-    public function login(JWTSubject $user)
+    public function login(JWTSubject $user): string
     {
         $token = parent::login($user);
 
@@ -143,18 +137,13 @@ final class IdApiGuard extends JWTGuard
      *
      * @param  bool  $forceForever
      * @param  bool  $resetClaims
-     * @return string
+     *
+     * @throws TokenInvalidException
      */
-    public function refresh($forceForever = false, $resetClaims = false)
+    public function refresh($forceForever = false, $resetClaims = false): string
     {
         $oldJti = $this->getPayload()->get('jti');
 
-        // buildRefreshClaims() in the underlying library does NOT call
-        // getJWTCustomClaims() again — it only carries over claims listed
-        // in config('jwt.persistent_claims'), which is empty here. Without
-        // this, "role" would silently vanish from the token after the
-        // very first refresh instead of being re-derived from current DB
-        // state (e.g. picking up a role change since the last login).
         /** @var User|null $currentUser */
         $currentUser = $this->getUser();
 
@@ -188,9 +177,8 @@ final class IdApiGuard extends JWTGuard
      * natural expiry.
      *
      * @param  bool  $forceForever
-     * @return void
      */
-    public function logout($forceForever = false)
+    public function logout($forceForever = false): void
     {
         $jti = null;
 

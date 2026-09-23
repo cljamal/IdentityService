@@ -22,7 +22,6 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property bool|null $is_current Transient, set by ListSessionsAction — not a column.
- *
  * @property-read User|null $user
  */
 class AuthSession extends Model

@@ -2,8 +2,8 @@
 
 namespace App\Actions\Auth;
 
-use App\Auth\Enums\AuthProviderName;
 use App\Auth\AuthStrategyResolver;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Contracts\ConfirmsDeletion;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use App\Models\User;

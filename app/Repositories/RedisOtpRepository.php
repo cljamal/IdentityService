@@ -16,7 +16,7 @@ final class RedisOtpRepository implements OtpRepositoryInterface
     public function put(string $subject, string $code): void
     {
         // @phpstan-ignore staticMethod.notFound
-        Redis::transaction(function ($tx) use ($subject, $code) {
+        Redis::transaction(function (\Redis $tx) use ($subject, $code): void {
             $tx->setex($this->codeKey($subject), self::CODE_TTL, $code);
             $tx->setex($this->cooldownKey($subject), self::RESEND_COOLDOWN, 1);
         });

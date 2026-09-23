@@ -97,7 +97,8 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
     }
 
     /**
-     * @param array<string, mixed> $meta
+     * @param  array<string, mixed>  $meta
+     *
      * @throws Throwable
      */
     public function createUserWithIdentity(
