@@ -22,9 +22,7 @@ class MeController extends Controller
     {
         abort_if(app()->environment('production'), 404);
 
-        $guard = IdApiGuard::current();
-        $payload = $guard->getPayload();
-        $user = $guard->user();
+        $payload = IdApiGuard::current()->getPayload();
 
         $now = now()->timestamp;
         $issuedAt = (int) $payload->get('iat');
@@ -32,8 +30,8 @@ class MeController extends Controller
 
         return response()->json([
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
+                'id' => $payload->get('sub'),
+                'role' => $payload->get('role'),
             ],
             'claims' => $payload->toArray(),
             'readable' => [

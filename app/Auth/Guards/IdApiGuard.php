@@ -149,6 +149,19 @@ class IdApiGuard extends JWTGuard
     {
         $oldJti = $this->getPayload()->get('jti');
 
+        // buildRefreshClaims() in the underlying library does NOT call
+        // getJWTCustomClaims() again — it only carries over claims listed
+        // in config('jwt.persistent_claims'), which is empty here. Without
+        // this, "role" would silently vanish from the token after the
+        // very first refresh instead of being re-derived from current DB
+        // state (e.g. picking up a role change since the last login).
+        /** @var User|null $currentUser */
+        $currentUser = $this->getUser();
+
+        if ($currentUser) {
+            $this->claims($currentUser->getJWTCustomClaims());
+        }
+
         $newToken = parent::refresh($forceForever, $resetClaims);
 
         $payload = $this->jwt->manager()->decode(new Token($newToken));
@@ -156,12 +169,9 @@ class IdApiGuard extends JWTGuard
 
         $rotated = $this->sessions->rotate($oldJti, $payload->get('jti'), $expiresAt);
 
-        /** @var User|null $user */
-        $user = $this->getUser();
-
-        if (! $rotated && $user) {
+        if (! $rotated && $currentUser) {
             $this->sessions->record(
-                $user,
+                $currentUser,
                 $payload->get('jti'),
                 $expiresAt,
                 $this->request->ip(),

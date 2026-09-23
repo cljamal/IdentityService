@@ -9,8 +9,17 @@ use Illuminate\Support\Carbon;
 use RuntimeException;
 
 /**
+ * @property int $id
+ * @property int|null $user_id
+ * @property string $provider
+ * @property string $identifier
  * @property array<string, mixed>|null $meta
  * @property Carbon|null $verified_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
+ *
+ * @property-read User|null $user
  */
 class AuthProvider extends Model
 {

@@ -12,11 +12,16 @@ use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
-class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
+readonly class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
 {
-    public function __construct(private readonly IdentityChangeLogRepositoryInterface $history) {}
+    public function __construct(private IdentityChangeLogRepositoryInterface $history) {}
 
+    /**
+     * @throws IdentifierAlreadyTakenException
+     * @throws Throwable
+     */
     public function firstOrCreateUser(AuthProviderName $provider, string $identifier): User
     {
         $identity = $this->findByIdentifier($provider, $identifier);
@@ -28,8 +33,6 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
         try {
             return $this->createUserWithIdentity($provider, $identifier, verified: true);
         } catch (IdentifierAlreadyTakenException) {
-            // Гонка: два одновременных запроса с одним и тем же телефоном —
-            // не ошибка, конкурент просто успел создать identity первым.
             return $this->findByIdentifier($provider, $identifier)?->userOrFail()
                 ?? throw new IdentifierAlreadyTakenException($identifier);
         }
@@ -94,7 +97,8 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
     }
 
     /**
-     * @param  array<string, mixed>  $meta
+     * @param array<string, mixed> $meta
+     * @throws Throwable
      */
     public function createUserWithIdentity(
         AuthProviderName $provider,
