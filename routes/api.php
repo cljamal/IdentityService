@@ -38,9 +38,9 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
         Route::delete('sessions/{session}', [SessionController::class, 'destroy']);
 
         // Дебаг-эндпоинт для разработки: показывает раскодированный JWT
-        // текущего запроса. Никогда не регистрируется в проде.
-        if (! app()->environment('production')) {
-            Route::get('me', [MeController::class, 'show']);
-        }
+        // текущего запроса. Роут регистрируется всегда — сам контроллер
+        // отказывает в проде (см. MeController), т.к. route:cache
+        // "заморозил" бы проверку окружения здесь на момент сборки кэша.
+        Route::get('me', [MeController::class, 'show']);
     });
 });

@@ -11,13 +11,17 @@ use Illuminate\Support\Carbon;
  * this request. A JWT's payload is base64, not encrypted, so this reveals
  * nothing a caller couldn't already read themselves via jwt.io or
  * atob(token.split('.')[1]) — it just saves that copy-paste while
- * building against the API. Not registered when APP_ENV=production,
- * see routes/api.php.
+ * building against the API. Refuses to run when APP_ENV=production —
+ * checked here, not by conditionally registering the route in
+ * routes/api.php, since `route:cache` would freeze that check at
+ * build time instead of evaluating it per request.
  */
 class MeController extends Controller
 {
     public function show(): JsonResponse
     {
+        abort_if(app()->environment('production'), 404);
+
         $guard = IdApiGuard::current();
         $payload = $guard->getPayload();
         $user = $guard->user();

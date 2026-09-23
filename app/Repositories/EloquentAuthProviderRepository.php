@@ -102,10 +102,10 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
         array $meta = [],
         bool $verified = false,
     ): User {
-        try {
-            return DB::transaction(function () use ($provider, $identifier, $meta, $verified) {
-                $user = User::query()->create([]);
+        return DB::transaction(function () use ($provider, $identifier, $meta, $verified) {
+            $user = User::query()->create([]);
 
+            try {
                 AuthProvider::query()->create([
                     'user_id' => $user->id,
                     'provider' => $provider->value,
@@ -113,17 +113,17 @@ class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
                     'meta' => $meta ?: null,
                     'verified_at' => $verified ? now() : null,
                 ]);
+            } catch (UniqueConstraintViolationException) {
+                throw new IdentifierAlreadyTakenException($identifier);
+            }
 
-                $this->history->log($user, $provider, IdentityChangeAction::Registered, null, $identifier);
+            $this->history->log($user, $provider, IdentityChangeAction::Registered, null, $identifier);
 
-                if ($user->roles()->doesntExist()) {
-                    UserHasNoRole::dispatch($user);
-                }
+            if ($user->roles()->doesntExist()) {
+                UserHasNoRole::dispatch($user);
+            }
 
-                return $user;
-            });
-        } catch (UniqueConstraintViolationException) {
-            throw new IdentifierAlreadyTakenException($identifier);
-        }
+            return $user;
+        });
     }
 }
