@@ -1,0 +1,21 @@
+meta {
+  name: Confirm Account Deletion
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/auth/email-password/account/delete/confirm
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{emailToken}}
+}
+
+body:json {
+  {
+    "code": "1111"
+  }
+}

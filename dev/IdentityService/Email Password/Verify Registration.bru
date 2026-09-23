@@ -1,0 +1,29 @@
+meta {
+  name: Verify Registration
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/email-password/register/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "user@example.com",
+    "code": "1111"
+  }
+}
+
+script:post-response {
+  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+    bru.setEnvVar("emailToken", res.body.data.access_token);
+    bru.setEnvVar("token", res.body.data.access_token);
+  }
+}
+
+docs {
+  Подтверждает код, отправленный при регистрации, и сразу выдаёт JWT.
+}

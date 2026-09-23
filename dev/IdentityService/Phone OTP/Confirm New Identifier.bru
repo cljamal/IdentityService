@@ -1,0 +1,25 @@
+meta {
+  name: Confirm New Identifier
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/phone-otp/identifier/change/confirm-new
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{phoneToken}}
+}
+
+body:json {
+  {
+    "code": "1111"
+  }
+}
+
+docs {
+  Шаг 3 из 3: номер телефона фактически меняется на новый.
+}

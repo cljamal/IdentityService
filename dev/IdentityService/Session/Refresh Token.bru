@@ -1,0 +1,25 @@
+meta {
+  name: Refresh Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/refresh
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+    bru.setEnvVar("token", res.body.data.access_token);
+  }
+}
+
+docs {
+  Обновляет переданный токен на новый (общая переменная token, не привязана к провайдеру).
+}

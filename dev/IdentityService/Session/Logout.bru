@@ -1,0 +1,19 @@
+meta {
+  name: Logout
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/logout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Инвалидирует токен, которым выполнен запрос (не привязан к конкретному провайдеру).
+}

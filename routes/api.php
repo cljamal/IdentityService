@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\IdentifierChangeController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\VerificationCodeController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,5 +32,8 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
     Route::group(['middleware' => 'auth:id-api'], function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
+
+        Route::get('sessions', [SessionController::class, 'index']);
+        Route::delete('sessions/{session}', [SessionController::class, 'destroy']);
     });
 });

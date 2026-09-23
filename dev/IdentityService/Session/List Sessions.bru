@@ -1,0 +1,22 @@
+meta {
+  name: List Sessions
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/auth/sessions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Список активных сессий текущего пользователя (одна запись на выданный JWT —
+  refresh продлевает существующую запись, а не создаёт новую). Каждая содержит
+  ip_address, user_agent, created_at, last_used_at, expires_at и is_current
+  (true у той сессии, которой сейчас выполнен этот запрос).
+}

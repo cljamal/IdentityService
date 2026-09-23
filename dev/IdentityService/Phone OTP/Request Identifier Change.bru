@@ -1,0 +1,25 @@
+meta {
+  name: Request Identifier Change
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/phone-otp/identifier/change
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{phoneToken}}
+}
+
+body:json {
+  {
+    "new_phone": "998907654321"
+  }
+}
+
+docs {
+  Шаг 1 из 3 смены номера: код уходит на СТАРЫЙ номер (см. лог/Log::info на бэкенде).
+}

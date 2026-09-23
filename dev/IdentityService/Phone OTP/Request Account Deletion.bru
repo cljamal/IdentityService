@@ -1,0 +1,19 @@
+meta {
+  name: Request Account Deletion
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/auth/phone-otp/account/delete
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{phoneToken}}
+}
+
+docs {
+  Отправляет код подтверждения удаления аккаунта на привязанный номер телефона.
+}

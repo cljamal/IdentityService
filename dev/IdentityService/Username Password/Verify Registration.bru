@@ -1,0 +1,29 @@
+meta {
+  name: Verify Registration
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/username-password/register/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "john_doe",
+    "code": "1111"
+  }
+}
+
+script:post-response {
+  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+    bru.setEnvVar("usernameToken", res.body.data.access_token);
+    bru.setEnvVar("token", res.body.data.access_token);
+  }
+}
+
+docs {
+  Нужен, только если Register вернул "проверьте код" (т.е. rescue-контакт настроен).
+}

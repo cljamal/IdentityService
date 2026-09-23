@@ -1,0 +1,22 @@
+meta {
+  name: Send Code
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/phone-otp/otp
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "phone": "998901234567"
+  }
+}
+
+docs {
+  Отправляет одноразовый код на телефон (лог, пока не подключён реальный SMS-шлюз).
+  В local-окружении код всегда 1111.
+}

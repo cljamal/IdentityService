@@ -1,0 +1,19 @@
+meta {
+  name: Request Account Deletion
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/auth/email-password/account/delete
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{emailToken}}
+}
+
+docs {
+  Отправляет код подтверждения удаления аккаунта на привязанный email.
+}

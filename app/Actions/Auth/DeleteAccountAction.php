@@ -6,6 +6,7 @@ use App\Auth\Guards\IdApiGuard;
 use App\Auth\History\IdentityChangeAction;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
+use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -17,6 +18,7 @@ class DeleteAccountAction
     public function __construct(
         private readonly AuthProviderRepositoryInterface $providers,
         private readonly IdentityChangeLogRepositoryInterface $history,
+        private readonly AuthSessionRepositoryInterface $sessions,
     ) {}
 
     public function handle(User $user): void
@@ -27,6 +29,8 @@ class DeleteAccountAction
             // никогда физически не удаляется (SoftDeletes), восстановление
             // не планируется, поэтому обратимость этого шага не нужна.
             $this->providers->releaseAllForUser($user);
+
+            $this->sessions->revokeAllForUser($user);
 
             $user->delete();
 

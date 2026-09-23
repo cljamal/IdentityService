@@ -1,0 +1,21 @@
+meta {
+  name: Revoke Session
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/auth/sessions/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Отзывает конкретную сессию по id (взять из ответа List Sessions — замените
+  "1" в URL). Отзыв чужой или несуществующей сессии, как и сессии другого
+  пользователя, отвечает одинаковым 404 (id не палит существование).
+}

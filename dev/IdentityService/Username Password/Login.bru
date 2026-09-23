@@ -1,0 +1,25 @@
+meta {
+  name: Login
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/username-password/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "john_doe",
+    "password": "password123"
+  }
+}
+
+script:post-response {
+  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+    bru.setEnvVar("usernameToken", res.body.data.access_token);
+    bru.setEnvVar("token", res.body.data.access_token);
+  }
+}

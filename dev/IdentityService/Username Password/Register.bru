@@ -1,0 +1,32 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/username-password/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "john_doe",
+    "password": "password123",
+    "password_confirmation": "password123"
+  }
+}
+
+script:post-response {
+  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+    bru.setEnvVar("usernameToken", res.body.data.access_token);
+    bru.setEnvVar("token", res.body.data.access_token);
+  }
+}
+
+docs {
+  У "username" нет своего канала доставки: если rescue-контакт не настроен
+  (config/identity.php: username_password_rescue.table), identity верифицируется
+  сразу и ответ будет с access_token, а не с "проверьте код".
+}

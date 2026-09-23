@@ -1,0 +1,25 @@
+meta {
+  name: Confirm Account Deletion
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/auth/phone-otp/account/delete/confirm
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{phoneToken}}
+}
+
+body:json {
+  {
+    "code": "1111"
+  }
+}
+
+docs {
+  Аккаунт и все его identity (soft-delete) удаляются, токен инвалидируется.
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/phone-otp/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "phone": "998901234567",
+    "code": "1111"
+  }
+}
+
+script:post-response {
+  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+    bru.setEnvVar("phoneToken", res.body.data.access_token);
+    bru.setEnvVar("token", res.body.data.access_token);
+  }
+}
+
+docs {
+  Логин по phone-otp автоматически создаёт пользователя, если такого номера ещё нет
+  (firstOrCreateUser). Сохраняет токен в phoneToken/token для остальных запросов.
+}
