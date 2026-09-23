@@ -20,14 +20,14 @@ use Illuminate\Support\Facades\Log;
  * notify (identifier itself, a resolved rescue contact, ...) stays with
  * the calling strategy — this class is blind to that.
  */
-class CodeBasedPasswordReset
+final readonly class CodeBasedPasswordReset
 {
     use GeneratesVerificationCode;
 
     public function __construct(
-        private readonly OtpRepositoryInterface $otp,
-        private readonly AuthProviderRepositoryInterface $providers,
-        private readonly IdentityChangeLogRepositoryInterface $history,
+        private OtpRepositoryInterface $otp,
+        private AuthProviderRepositoryInterface $providers,
+        private IdentityChangeLogRepositoryInterface $history,
     ) {}
 
     /**

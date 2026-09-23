@@ -6,7 +6,7 @@ use App\Auth\Guards\IdApiGuard;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class TokenResource extends JsonResource
+final class TokenResource extends JsonResource
 {
     public function __construct(private readonly string $token)
     {

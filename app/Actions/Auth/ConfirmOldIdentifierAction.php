@@ -11,11 +11,11 @@ use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class ConfirmOldIdentifierAction
+final readonly class ConfirmOldIdentifierAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver) {}
+    public function __construct(private AuthStrategyResolver $resolver) {}
 
     /**
      * @param  array<string, mixed>  $data

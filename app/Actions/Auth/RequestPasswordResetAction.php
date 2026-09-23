@@ -10,11 +10,11 @@ use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class RequestPasswordResetAction
+final readonly class RequestPasswordResetAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver) {}
+    public function __construct(private AuthStrategyResolver $resolver) {}
 
     /**
      * @param  array<string, mixed>  $data

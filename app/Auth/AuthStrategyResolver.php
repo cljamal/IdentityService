@@ -9,9 +9,9 @@ use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
 use LogicException;
 
-class AuthStrategyResolver
+final readonly class AuthStrategyResolver
 {
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private Container $container) {}
 
     /**
      * @throws AuthProviderDisabledException

@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\Schema;
  * (e.g. user_metas: user_id / meta_key / meta_value), fully
  * configurable so it isn't tied to one specific schema.
  */
-class MetaTableRescueContactResolver implements RescueContactResolver
+final readonly class MetaTableRescueContactResolver implements RescueContactResolver
 {
     public function __construct(
-        private readonly string $table,
-        private readonly string $userIdColumn,
-        private readonly string $keyColumn,
-        private readonly string $valueColumn,
-        private readonly string $metaKey,
+        private string $table,
+        private string $userIdColumn,
+        private string $keyColumn,
+        private string $valueColumn,
+        private string $metaKey,
     ) {}
 
     public function resolve(User $user): ?string

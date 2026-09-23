@@ -16,14 +16,14 @@ use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
-class EmailPasswordStrategy extends PasswordStrategy implements ConfirmsDeletion, NormalizesInput, ResetsPassword
+final readonly class EmailPasswordStrategy extends PasswordStrategy implements ConfirmsDeletion, NormalizesInput, ResetsPassword
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,
         RegistrationVerifier $verification,
         IdentityChangeLogRepositoryInterface $history,
-        private readonly CodeBasedPasswordReset $reset,
-        private readonly AccountDeletionConfirmer $deletion,
+        private CodeBasedPasswordReset $reset,
+        private AccountDeletionConfirmer $deletion,
     ) {
         parent::__construct($providers, $verification, $history);
     }

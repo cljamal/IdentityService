@@ -11,14 +11,14 @@ use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class DeleteAccountAction
+final readonly class DeleteAccountAction
 {
     use AsAction;
 
     public function __construct(
-        private readonly AuthProviderRepositoryInterface $providers,
-        private readonly IdentityChangeLogRepositoryInterface $history,
-        private readonly AuthSessionRepositoryInterface $sessions,
+        private AuthProviderRepositoryInterface $providers,
+        private IdentityChangeLogRepositoryInterface $history,
+        private AuthSessionRepositoryInterface $sessions,
     ) {}
 
     public function handle(User $user): void

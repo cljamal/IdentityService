@@ -9,7 +9,7 @@ use App\Auth\Guards\IdApiGuard;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
 
-class AccountController extends Controller
+final class AccountController extends Controller
 {
     /**
      * Request account deletion: sends a confirmation code via the given provider's channel.

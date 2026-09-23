@@ -8,7 +8,7 @@ use App\Models\IdentityChangeLog;
 use App\Models\User;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 
-class EloquentIdentityChangeLogRepository implements IdentityChangeLogRepositoryInterface
+final class EloquentIdentityChangeLogRepository implements IdentityChangeLogRepositoryInterface
 {
     public function log(
         User $user,

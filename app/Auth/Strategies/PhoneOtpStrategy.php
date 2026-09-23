@@ -21,17 +21,17 @@ use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
-class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier, ConfirmsDeletion, IssuesVerificationCode, NormalizesInput
+final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier, ConfirmsDeletion, IssuesVerificationCode, NormalizesInput
 {
     use GeneratesVerificationCode;
 
     private const PHONE_FIELDS = ['phone', 'new_phone'];
 
     public function __construct(
-        private readonly OtpRepositoryInterface $otp,
-        private readonly AuthProviderRepositoryInterface $providers,
-        private readonly PhoneChangeCoordinator $phoneChange,
-        private readonly AccountDeletionConfirmer $deletion,
+        private OtpRepositoryInterface $otp,
+        private AuthProviderRepositoryInterface $providers,
+        private PhoneChangeCoordinator $phoneChange,
+        private AccountDeletionConfirmer $deletion,
     ) {}
 
     /**

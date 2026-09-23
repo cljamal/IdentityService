@@ -7,7 +7,7 @@ use App\Repositories\Contracts\RoleRepositoryInterface;
 use Spatie\Permission\Contracts\Role;
 use Spatie\Permission\Models\Role as RoleModel;
 
-class EloquentRoleRepository implements RoleRepositoryInterface
+final class EloquentRoleRepository implements RoleRepositoryInterface
 {
     public function findOrCreate(RoleName $name, string $guard): Role
     {

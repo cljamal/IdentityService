@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class OtpThrottledException extends Exception
+final class OtpThrottledException extends Exception
 {
     public function __construct(private readonly int $retryAfter)
     {

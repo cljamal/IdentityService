@@ -9,7 +9,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * Rejects a (already normalized, digits-only) phone that doesn't start
  * with one of the enabled country codes from config/identity.php.
  */
-class AllowedPhoneCountry implements ValidationRule
+final class AllowedPhoneCountry implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {

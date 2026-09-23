@@ -9,7 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @mixin AuthSession
  */
-class SessionResource extends JsonResource
+final class SessionResource extends JsonResource
 {
     /**
      * @return array<string, mixed>

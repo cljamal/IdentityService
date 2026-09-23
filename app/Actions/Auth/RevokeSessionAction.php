@@ -7,11 +7,11 @@ use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class RevokeSessionAction
+final readonly class RevokeSessionAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthSessionRepositoryInterface $sessions) {}
+    public function __construct(private AuthSessionRepositoryInterface $sessions) {}
 
     /**
      * @throws SessionNotFoundException

@@ -7,7 +7,7 @@ use App\Auth\Enums\AuthProviderName;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
 
-class VerificationCodeController extends Controller
+final class VerificationCodeController extends Controller
 {
     /**
      * Send a verification code (e.g. phone OTP) for the given provider.

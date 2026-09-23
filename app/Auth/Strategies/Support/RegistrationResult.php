@@ -10,10 +10,10 @@ use App\Models\User;
  * verify against) or still pending a confirmation code — the caller uses
  * `verified` to decide whether to issue a token now or wait for it.
  */
-final class RegistrationResult
+final readonly class RegistrationResult
 {
     public function __construct(
-        public readonly User $user,
-        public readonly bool $verified,
+        public User $user,
+        public bool $verified,
     ) {}
 }

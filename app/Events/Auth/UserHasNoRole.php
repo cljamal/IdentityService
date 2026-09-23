@@ -12,9 +12,9 @@ use Illuminate\Foundation\Events\Dispatchable;
  * ...) gets its own event + listener pair assigning its own RoleName case,
  * instead of one listener branching on a role parameter.
  */
-class UserHasNoRole
+final readonly class UserHasNoRole
 {
     use Dispatchable;
 
-    public function __construct(public readonly User $user) {}
+    public function __construct(public User $user) {}
 }

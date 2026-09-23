@@ -8,11 +8,11 @@ use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class ListSessionsAction
+final readonly class ListSessionsAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthSessionRepositoryInterface $sessions) {}
+    public function __construct(private AuthSessionRepositoryInterface $sessions) {}
 
     /**
      * @return Collection<int, AuthSession>

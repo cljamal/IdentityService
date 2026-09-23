@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
  * routes/api.php, since `route:cache` would freeze that check at
  * build time instead of evaluating it per request.
  */
-class MeController extends Controller
+final class MeController extends Controller
 {
     public function show(): JsonResponse
     {

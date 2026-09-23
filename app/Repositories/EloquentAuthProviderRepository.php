@@ -14,7 +14,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-readonly class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
+final readonly class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
 {
     public function __construct(private IdentityChangeLogRepositoryInterface $history) {}
 

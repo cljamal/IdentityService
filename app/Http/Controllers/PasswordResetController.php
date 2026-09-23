@@ -9,7 +9,7 @@ use App\Http\Resources\Auth\TokenResource;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
 
-class PasswordResetController extends Controller
+final class PasswordResetController extends Controller
 {
     /**
      * Request a password reset code for the given provider.

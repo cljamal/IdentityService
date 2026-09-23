@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class AuthProviderDisabledException extends Exception
+final class AuthProviderDisabledException extends Exception
 {
     public function __construct(string $provider)
     {

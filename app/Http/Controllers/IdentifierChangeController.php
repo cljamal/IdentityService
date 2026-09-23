@@ -10,7 +10,7 @@ use App\Auth\Guards\IdApiGuard;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
 
-class IdentifierChangeController extends Controller
+final class IdentifierChangeController extends Controller
 {
     /**
      * Request the change: sends an OTP to the OLD identifier (e.g. current phone).

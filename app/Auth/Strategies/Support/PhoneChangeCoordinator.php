@@ -20,13 +20,13 @@ use Illuminate\Support\Facades\Log;
  * new number itself is stashed in the same OTP store between steps (it's
  * just a short-lived string with a TTL, same shape as a code).
  */
-class PhoneChangeCoordinator
+final readonly class PhoneChangeCoordinator
 {
     public function __construct(
-        private readonly OtpChallenge $challenge,
-        private readonly OtpRepositoryInterface $otp,
-        private readonly AuthProviderRepositoryInterface $providers,
-        private readonly IdentityChangeLogRepositoryInterface $history,
+        private OtpChallenge $challenge,
+        private OtpRepositoryInterface $otp,
+        private AuthProviderRepositoryInterface $providers,
+        private IdentityChangeLogRepositoryInterface $history,
     ) {}
 
     /**

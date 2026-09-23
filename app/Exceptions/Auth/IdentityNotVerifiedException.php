@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class IdentityNotVerifiedException extends Exception
+final class IdentityNotVerifiedException extends Exception
 {
     public function __construct(string $provider)
     {

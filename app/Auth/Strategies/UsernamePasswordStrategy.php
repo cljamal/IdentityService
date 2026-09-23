@@ -14,14 +14,14 @@ use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Validation\Rule;
 
-class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPassword
+final readonly class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPassword
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,
         RegistrationVerifier $verification,
         IdentityChangeLogRepositoryInterface $history,
-        private readonly CodeBasedPasswordReset $reset,
-        private readonly RescueContactResolver $rescue,
+        private CodeBasedPasswordReset $reset,
+        private RescueContactResolver $rescue,
     ) {
         parent::__construct($providers, $verification, $history);
     }

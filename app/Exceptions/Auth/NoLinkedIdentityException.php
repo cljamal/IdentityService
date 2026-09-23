@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
  * The authenticated user has no identity for this provider to change
  * (e.g. they logged in via email-password and never linked a phone).
  */
-class NoLinkedIdentityException extends Exception
+final class NoLinkedIdentityException extends Exception
 {
     public function __construct(string $provider)
     {

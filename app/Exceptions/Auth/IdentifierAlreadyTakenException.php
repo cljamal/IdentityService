@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
  * rejects the loser. This turns that into a clean 422 instead of a raw
  * QueryException/500.
  */
-class IdentifierAlreadyTakenException extends Exception
+final class IdentifierAlreadyTakenException extends Exception
 {
     public function __construct(string $identifier)
     {

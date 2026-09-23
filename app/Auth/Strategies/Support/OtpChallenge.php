@@ -14,11 +14,11 @@ use App\Repositories\Contracts\OtpRepositoryInterface;
  * some flows need to hold off on that until later steps are known to
  * succeed, so it's a separate call rather than baked into verify().
  */
-class OtpChallenge
+final readonly class OtpChallenge
 {
     use GeneratesVerificationCode;
 
-    public function __construct(private readonly OtpRepositoryInterface $otp) {}
+    public function __construct(private OtpRepositoryInterface $otp) {}
 
     /**
      * @throws OtpThrottledException

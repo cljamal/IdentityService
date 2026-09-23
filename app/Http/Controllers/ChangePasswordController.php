@@ -8,7 +8,7 @@ use App\Auth\Guards\IdApiGuard;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
 
-class ChangePasswordController extends Controller
+final class ChangePasswordController extends Controller
 {
     public function __invoke(AuthProviderName $provider, Request $request): MessageResource
     {

@@ -8,7 +8,7 @@ use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
-class EloquentAuthSessionRepository implements AuthSessionRepositoryInterface
+final class EloquentAuthSessionRepository implements AuthSessionRepositoryInterface
 {
     public function record(User $user, string $jti, Carbon $expiresAt, ?string $ip, ?string $userAgent): void
     {

@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
  * belongs to another user — deliberately indistinguishable from "not
  * found" so a session id can't be used to probe other users' sessions.
  */
-class SessionNotFoundException extends Exception
+final class SessionNotFoundException extends Exception
 {
     public function __construct()
     {

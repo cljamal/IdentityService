@@ -11,7 +11,7 @@ use App\Http\Resources\Auth\TokenResource;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Request;
 
-class AuthController extends Controller
+final class AuthController extends Controller
 {
     /**
      * Register a new identity for the given provider. Returns a JWT right

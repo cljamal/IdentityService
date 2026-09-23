@@ -5,7 +5,7 @@ namespace App\Repositories;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Support\Facades\Redis;
 
-class RedisOtpRepository implements OtpRepositoryInterface
+final class RedisOtpRepository implements OtpRepositoryInterface
 {
     /** Code validity: 1:30. */
     private const int CODE_TTL = 90;

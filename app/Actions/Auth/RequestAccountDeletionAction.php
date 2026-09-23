@@ -9,11 +9,11 @@ use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use App\Models\User;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class RequestAccountDeletionAction
+final readonly class RequestAccountDeletionAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver) {}
+    public function __construct(private AuthStrategyResolver $resolver) {}
 
     public function handle(AuthProviderName $provider, User $user): void
     {

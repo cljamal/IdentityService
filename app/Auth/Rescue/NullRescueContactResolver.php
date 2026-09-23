@@ -9,7 +9,7 @@ use App\Models\User;
  * feature explicitly (see UsernamePasswordStrategy::guardRescueEnabled),
  * this just guarantees a safe, always-constructible dependency.
  */
-class NullRescueContactResolver implements RescueContactResolver
+final class NullRescueContactResolver implements RescueContactResolver
 {
     public function resolve(User $user): ?string
     {

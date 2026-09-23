@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Hash;
  * identity must go through an explicit register() step — authenticate()
  * only ever verifies, it never auto-creates.
  */
-abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, RegistersIdentity
+abstract readonly class PasswordStrategy implements AuthStrategy, ChangesPassword, RegistersIdentity
 {
     /**
      * A valid, arbitrary bcrypt hash used only to keep authenticate()'s
@@ -32,9 +32,9 @@ abstract class PasswordStrategy implements AuthStrategy, ChangesPassword, Regist
     private const DUMMY_HASH = '$2y$12$CwTycUXWue0Thq9StjUM0uJ8Ffx5DZOG.iP4XCTnhSEHIZQ0BEqiG';
 
     public function __construct(
-        protected readonly AuthProviderRepositoryInterface $providers,
-        protected readonly RegistrationVerifier $verification,
-        protected readonly IdentityChangeLogRepositoryInterface $history,
+        protected AuthProviderRepositoryInterface $providers,
+        protected RegistrationVerifier $verification,
+        protected IdentityChangeLogRepositoryInterface $history,
     ) {}
 
     abstract protected function provider(): AuthProviderName;

@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class MessageResource extends JsonResource
+final class MessageResource extends JsonResource
 {
     public function __construct(private readonly string $message)
     {

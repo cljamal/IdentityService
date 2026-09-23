@@ -21,14 +21,14 @@ use Illuminate\Support\Facades\Log;
  * this is only ever called for an identity we just created ourselves in
  * the same request, so there's no anti-enumeration concern here.
  */
-class RegistrationVerifier
+final readonly class RegistrationVerifier
 {
     use GeneratesVerificationCode;
 
     public function __construct(
-        private readonly OtpRepositoryInterface $otp,
-        private readonly AuthProviderRepositoryInterface $providers,
-        private readonly IdentityChangeLogRepositoryInterface $history,
+        private OtpRepositoryInterface $otp,
+        private AuthProviderRepositoryInterface $providers,
+        private IdentityChangeLogRepositoryInterface $history,
     ) {}
 
     /**

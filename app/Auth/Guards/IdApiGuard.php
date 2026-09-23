@@ -32,7 +32,7 @@ use PHPOpenSourceSaver\JWTAuth\Token;
  * and revoke their active sessions independently of the library's own
  * blacklist, which only ever targets "the token this request is using".
  */
-class IdApiGuard extends JWTGuard
+final class IdApiGuard extends JWTGuard
 {
     public function __construct(
         JWT $jwt,
@@ -89,7 +89,7 @@ class IdApiGuard extends JWTGuard
      *
      * @return Authenticatable|null
      */
-    public function user()
+    public function user(): ?Authenticatable
     {
         // Same cache parent relies on — also skips re-hitting isRevoked()
         // on every later ->user() call in the same request (most actions

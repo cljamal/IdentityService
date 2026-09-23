@@ -11,11 +11,11 @@ use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class VerifyRegistrationAction
+final readonly class VerifyRegistrationAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver) {}
+    public function __construct(private AuthStrategyResolver $resolver) {}
 
     /**
      * @param  array<string, mixed>  $data

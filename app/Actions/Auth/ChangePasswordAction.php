@@ -12,11 +12,11 @@ use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
-class ChangePasswordAction
+final readonly class ChangePasswordAction
 {
     use AsAction;
 
-    public function __construct(private readonly AuthStrategyResolver $resolver) {}
+    public function __construct(private AuthStrategyResolver $resolver) {}
 
     /**
      * @param  array<string, mixed>  $data

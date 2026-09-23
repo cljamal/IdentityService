@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class InvalidOtpException extends Exception
+final class InvalidOtpException extends Exception
 {
     public function __construct()
     {

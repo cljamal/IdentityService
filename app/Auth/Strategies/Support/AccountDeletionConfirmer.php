@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Log;
  * a given channel before deletion proceeds. Keyed by user id, not by
  * identifier — we're confirming "it's still you", not looking anything up.
  */
-class AccountDeletionConfirmer
+final readonly class AccountDeletionConfirmer
 {
-    public function __construct(private readonly OtpChallenge $challenge) {}
+    public function __construct(private OtpChallenge $challenge) {}
 
     /**
      * @throws OtpThrottledException

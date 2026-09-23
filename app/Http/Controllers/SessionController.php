@@ -9,7 +9,7 @@ use App\Http\Resources\Auth\SessionResource;
 use App\Http\Resources\MessageResource;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class SessionController extends Controller
+final class SessionController extends Controller
 {
     /**
      * List the authenticated user's active sessions (one per issued JWT,
