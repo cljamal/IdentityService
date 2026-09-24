@@ -2,6 +2,7 @@
 
 namespace App\Auth\Strategies;
 
+use App\Auth\CurrentClient;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Contracts\AuthStrategy;
@@ -15,6 +16,8 @@ use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 
 /**
  * Shared logic for identifier+password providers. Unlike PhoneOtpStrategy,
@@ -35,6 +38,7 @@ abstract readonly class PasswordStrategy implements AuthStrategy, ChangesPasswor
         protected AuthProviderRepositoryInterface $providers,
         protected RegistrationVerifier $verification,
         protected IdentityChangeLogRepositoryInterface $history,
+        protected CurrentClient $currentClient,
     ) {}
 
     abstract protected function provider(): AuthProviderName;
@@ -49,6 +53,18 @@ abstract readonly class PasswordStrategy implements AuthStrategy, ChangesPasswor
      * @return array<string, mixed>
      */
     abstract protected function identifierRules(): array;
+
+    /**
+     * A `unique:auth_providers` rule scoped to the current client and this
+     * strategy's provider — the same identifier is free to be registered
+     * independently under a different client.
+     */
+    protected function uniqueIdentifierRule(): Unique
+    {
+        return Rule::unique('auth_providers', 'identifier')
+            ->where('client_id', $this->currentClient->get()->id)
+            ->where('provider', $this->provider()->value);
+    }
 
     /**
      * @param  array<string, mixed>  $data

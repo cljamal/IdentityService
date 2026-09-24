@@ -11,6 +11,7 @@ use RuntimeException;
 /**
  * @property int $id
  * @property int|null $user_id
+ * @property int $client_id
  * @property string $provider
  * @property string $identifier
  * @property array<string, mixed>|null $meta
@@ -24,7 +25,7 @@ class AuthProvider extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['user_id', 'provider', 'identifier', 'meta', 'verified_at'];
+    protected $fillable = ['user_id', 'client_id', 'provider', 'identifier', 'meta', 'verified_at'];
 
     /** meta may hold provider-specific secrets (e.g. password hash). */
     protected $hidden = ['meta'];

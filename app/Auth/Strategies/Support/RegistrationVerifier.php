@@ -2,6 +2,7 @@
 
 namespace App\Auth\Strategies\Support;
 
+use App\Auth\CurrentClient;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
@@ -31,6 +32,7 @@ final readonly class RegistrationVerifier
         private OtpRepositoryInterface $otp,
         private AuthProviderRepositoryInterface $providers,
         private IdentityChangeLogRepositoryInterface $history,
+        private CurrentClient $currentClient,
     ) {}
 
     /**
@@ -81,6 +83,6 @@ final readonly class RegistrationVerifier
 
     private function subject(AuthProviderName $provider, string $identifier): string
     {
-        return "{$provider->value}-verify:{$identifier}";
+        return "{$this->currentClient->get()->id}:{$provider->value}-verify:{$identifier}";
     }
 }

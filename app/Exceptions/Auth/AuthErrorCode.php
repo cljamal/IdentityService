@@ -10,6 +10,7 @@ namespace App\Exceptions\Auth;
 enum AuthErrorCode: string
 {
     case AuthProviderDisabled = 'AUTH_PROVIDER_DISABLED';
+    case ClientAuthenticationFailed = 'CLIENT_AUTHENTICATION_FAILED';
     case IdentifierAlreadyTaken = 'IDENTIFIER_ALREADY_TAKEN';
     case IdentityNotVerified = 'IDENTITY_NOT_VERIFIED';
     case InvalidCredentials = 'INVALID_CREDENTIALS';

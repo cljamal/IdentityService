@@ -10,12 +10,13 @@ use App\Models\User;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Tests\Concerns\ActsAsClient;
 use Tests\Fakes\FakeOtpRepository;
 use Tests\TestCase;
 
 class PasswordResetSessionRevocationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ActsAsClient;
 
     /**
      * A refresh token is a long-lived (14-day) bearer credential now, so a
@@ -27,9 +28,10 @@ class PasswordResetSessionRevocationTest extends TestCase
     {
         $this->app->singleton(OtpRepositoryInterface::class, FakeOtpRepository::class);
 
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         AuthProvider::query()->create([
             'user_id' => $user->id,
+            'client_id' => $this->defaultClient->id,
             'provider' => AuthProviderName::EmailPassword->value,
             'identifier' => 'user@example.com',
             'meta' => ['password' => Hash::make('oldpassword123')],
@@ -44,7 +46,7 @@ class PasswordResetSessionRevocationTest extends TestCase
 
         /** @var FakeOtpRepository $otp */
         $otp = $this->app->make(OtpRepositoryInterface::class);
-        $code = $otp->peek('email-password-reset:user@example.com');
+        $code = $otp->peek("{$this->defaultClient->id}:email-password-reset:user@example.com");
 
         $this->postJson('/api/auth/email-password/password/reset', [
             'email' => 'user@example.com',

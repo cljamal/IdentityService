@@ -7,11 +7,12 @@ use App\Auth\Enums\RoleName;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\ActsAsClient;
 use Tests\TestCase;
 
 class DefaultRoleAssignmentTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ActsAsClient;
 
     public function test_registration_assigns_the_default_user_role(): void
     {

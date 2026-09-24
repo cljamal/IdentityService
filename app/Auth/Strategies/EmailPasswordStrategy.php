@@ -2,6 +2,7 @@
 
 namespace App\Auth\Strategies;
 
+use App\Auth\CurrentClient;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Contracts\ConfirmsDeletion;
 use App\Auth\Strategies\Contracts\NormalizesInput;
@@ -16,7 +17,6 @@ use App\Notifications\Otp\OtpDestination;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 final readonly class EmailPasswordStrategy extends PasswordStrategy implements ConfirmsDeletion, NormalizesInput, ResetsPassword
 {
@@ -24,10 +24,11 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
         AuthProviderRepositoryInterface $providers,
         RegistrationVerifier $verification,
         IdentityChangeLogRepositoryInterface $history,
+        CurrentClient $currentClient,
         private CodeBasedPasswordReset $reset,
         private AccountDeletionConfirmer $deletion,
     ) {
-        parent::__construct($providers, $verification, $history);
+        parent::__construct($providers, $verification, $history, $currentClient);
     }
 
     /**
@@ -74,11 +75,7 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
     protected function identifierRules(): array
     {
         return [
-            'email' => [
-                'required', 'email', 'max:255',
-                Rule::unique('auth_providers', 'identifier')
-                    ->where('provider', AuthProviderName::EmailPassword->value),
-            ],
+            'email' => ['required', 'email', 'max:255', $this->uniqueIdentifierRule()],
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Auth\Strategies;
 
+use App\Auth\CurrentClient;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\Rules\AllowedPhoneCountry;
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
@@ -35,6 +36,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
         private AuthProviderRepositoryInterface $providers,
         private PhoneChangeCoordinator $phoneChange,
         private AccountDeletionConfirmer $deletion,
+        private CurrentClient $currentClient,
     ) {}
 
     /**
@@ -70,14 +72,15 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     public function sendCode(array $data): void
     {
         $phone = $data['phone'];
+        $subject = $this->subject($phone);
 
-        if (! $this->otp->canBeRequested($phone)) {
-            throw new OtpThrottledException($this->otp->secondsUntilNextRequest($phone));
+        if (! $this->otp->canBeRequested($subject)) {
+            throw new OtpThrottledException($this->otp->secondsUntilNextRequest($subject));
         }
 
         $code = $this->generateCode();
 
-        $this->otp->put($phone, $code);
+        $this->otp->put($subject, $code);
 
         OtpCodeIssued::dispatch(new OtpDestination(OtpChannel::Phone, $phone), $code, OtpPurpose::Login);
     }
@@ -100,8 +103,9 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     {
         $phone = $data['phone'];
         $code = $data['code'];
+        $subject = $this->subject($phone);
 
-        $actual = $this->otp->get($phone);
+        $actual = $this->otp->get($subject);
 
         if ($actual === null || ! hash_equals($actual, $code)) {
             throw new InvalidOtpException;
@@ -111,7 +115,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
 
         // Код "сжигаем" только после успешного логина/создания юзера —
         // иначе сбой записи в БД потерял бы уже введённый верный код.
-        $this->otp->forget($phone);
+        $this->otp->forget($subject);
 
         return $user;
     }
@@ -127,6 +131,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
             'new_phone' => [
                 ...$this->phoneRules(),
                 Rule::unique('auth_providers', 'identifier')
+                    ->where('client_id', $this->currentClient->get()->id)
                     ->where('provider', AuthProviderName::PhoneOtp->value)
                     ->ignore($identity?->id),
             ],
@@ -202,6 +207,16 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     public function confirmDeletion(User $user, array $data): void
     {
         $this->deletion->confirm(AuthProviderName::PhoneOtp, $user, $data['code']);
+    }
+
+    /**
+     * The same phone can legitimately request/hold an OTP under different
+     * clients at once — the Redis key has to say which client it's for,
+     * or a code issued for one client would verify under another's.
+     */
+    private function subject(string $phone): string
+    {
+        return "{$this->currentClient->get()->id}:{$phone}";
     }
 
     /**

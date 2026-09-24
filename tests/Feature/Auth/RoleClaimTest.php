@@ -7,15 +7,16 @@ use App\Auth\Guards\IdApiGuard;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\ActsAsClient;
 use Tests\TestCase;
 
 class RoleClaimTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ActsAsClient;
 
     public function test_role_claim_is_null_for_a_user_without_a_role(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->withToken($tokens->accessToken)
@@ -26,7 +27,7 @@ class RoleClaimTest extends TestCase
 
     public function test_role_claim_survives_a_refresh(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $user->assignRole(Role::findOrCreate(RoleName::User, 'id-api'));
 
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
@@ -50,7 +51,7 @@ class RoleClaimTest extends TestCase
      */
     public function test_refresh_picks_up_a_role_granted_after_the_original_login(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $user->assignRole(Role::findOrCreate(RoleName::User, 'id-api'));

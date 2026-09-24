@@ -2,6 +2,7 @@
 
 namespace App\Auth\Guards;
 
+use App\Auth\CurrentClient;
 use App\Auth\RefreshToken;
 use App\Auth\TokenPair;
 use App\Exceptions\Auth\InvalidRefreshTokenException;
@@ -43,6 +44,7 @@ final class IdApiGuard extends JWTGuard
         Request $request,
         Dispatcher $events,
         private readonly AuthSessionRepositoryInterface $sessions,
+        private readonly CurrentClient $currentClient,
     ) {
         parent::__construct($jwt, $provider, $request, $events);
     }
@@ -60,6 +62,7 @@ final class IdApiGuard extends JWTGuard
             $app['request'],
             $app['events'],
             $app->make(AuthSessionRepositoryInterface::class),
+            $app->make(CurrentClient::class),
         );
 
         $guard->setTTL(
@@ -88,7 +91,15 @@ final class IdApiGuard extends JWTGuard
     /**
      * As parent, but a token whose jti was explicitly revoked (via the
      * sessions endpoint) is rejected even though it's still
-     * cryptographically valid and unexpired.
+     * cryptographically valid and unexpired, and a token minted for a
+     * different client than the one authenticated on this request is
+     * rejected the same way — a token leaked from Client A's Gateway must
+     * not work when replayed through Client B's.
+     *
+     * The client check is skipped (not enforced as "must be null") when no
+     * client resolved at all: this guard is also used on
+     * /api/broadcasting/auth (see bootstrap/app.php), which sits outside
+     * the /api/auth prefix the "client" middleware wraps.
      */
     public function user(): ?Authenticatable
     {
@@ -102,7 +113,17 @@ final class IdApiGuard extends JWTGuard
             return null;
         }
 
-        if ($this->sessions->isRevoked($this->getPayload()->get('jti'))) {
+        $payload = $this->getPayload();
+
+        if ($this->sessions->isRevoked($payload->get('jti'))) {
+            $this->user = null;
+
+            return null;
+        }
+
+        $client = $this->currentClient->resolved();
+
+        if ($client !== null && $payload->get('client_id') !== $client->client_id) {
             $this->user = null;
 
             return null;
@@ -165,6 +186,13 @@ final class IdApiGuard extends JWTGuard
         $user = $session->user;
 
         if ($user === null) {
+            throw new InvalidRefreshTokenException;
+        }
+
+        // Same code as "unknown token" on purpose — distinguishing "wrong
+        // client" from "doesn't exist" would let a Gateway probe whether a
+        // session exists under some other client's credentials.
+        if ($user->client_id !== $this->currentClient->get()->id) {
             throw new InvalidRefreshTokenException;
         }
 

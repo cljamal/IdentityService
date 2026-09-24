@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -16,16 +17,20 @@ use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
+ * @property int $client_id
  * @property string $uuid
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
+ * @property-read Client $client
  * @property-read Collection<int, AuthProvider> $authProviders
  */
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
+
+    protected $fillable = ['client_id'];
 
     /**
      * Tell HasUuids to populate `uuid`, not the `id` primary key — `id`
@@ -36,6 +41,14 @@ class User extends Authenticatable implements JWTSubject
     public function uniqueIds(): array
     {
         return ['uuid'];
+    }
+
+    /**
+     * @return BelongsTo<Client, $this>
+     */
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 
     /**
@@ -72,6 +85,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'role' => $this->roles()->where('guard_name', 'id-api')->value('name'),
+            'client_id' => $this->client->client_id,
         ];
     }
 }

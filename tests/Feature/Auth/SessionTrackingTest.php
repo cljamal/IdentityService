@@ -8,11 +8,12 @@ use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\ActsAsClient;
 use Tests\TestCase;
 
 class SessionTrackingTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ActsAsClient;
 
     protected function tearDown(): void
     {
@@ -23,7 +24,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_login_records_a_session(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
 
         IdApiGuard::current()->loginWithRefreshToken($user);
 
@@ -36,7 +37,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_refresh_rotates_the_existing_session_instead_of_creating_a_new_one(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $originalJti = AuthSession::query()->where('user_id', $user->id)->value('jti');
@@ -52,7 +53,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_refresh_rejects_an_already_rotated_refresh_token(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])->assertOk();
@@ -71,7 +72,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_replaying_a_rotated_refresh_token_within_the_grace_window_does_not_revoke_the_session(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])->assertOk();
@@ -89,7 +90,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_refresh_rejects_an_unknown_token(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->postJson('/api/auth/refresh', ['refresh_token' => 'not-a-real-token'])
@@ -110,7 +111,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_refresh_rejects_an_expired_token(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         AuthSession::query()->where('user_id', $user->id)->update([
@@ -124,7 +125,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_refresh_rejects_a_token_belonging_to_a_revoked_session(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->withToken($tokens->accessToken)->postJson('/api/auth/logout')->assertOk();
@@ -138,7 +139,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_replaying_an_already_rotated_token_after_logout_is_invalid_not_reused(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $refreshed = $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken]);
@@ -156,7 +157,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_the_pre_refresh_access_token_stops_working_after_a_refresh(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])->assertOk();
@@ -168,7 +169,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_a_session_stays_listed_after_its_recorded_access_token_expiry_has_passed(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         // expires_at is just a bookkeeping copy of the access token's own
@@ -191,7 +192,7 @@ class SessionTrackingTest extends TestCase
         /** @var AuthSessionRepositoryInterface $repository */
         $repository = app(AuthSessionRepositoryInterface::class);
 
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $repository->record($user, 'jti-1', now()->addHour(), 'hash-1', now()->addDays(14), null, null);
 
         // Both "requests" read the row before either one writes to it —
@@ -210,7 +211,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_logout_marks_the_session_revoked(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->withToken($tokens->accessToken)->postJson('/api/auth/logout')->assertOk();
@@ -221,7 +222,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_can_list_sessions_with_the_current_one_flagged(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $response = $this->withToken($tokens->accessToken)->getJson('/api/auth/sessions');
@@ -232,7 +233,7 @@ class SessionTrackingTest extends TestCase
 
     public function test_revoking_a_session_immediately_invalidates_its_token(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
         $sessionId = AuthSession::query()->where('user_id', $user->id)->value('id');
 
@@ -245,11 +246,11 @@ class SessionTrackingTest extends TestCase
 
     public function test_revoking_another_users_session_looks_like_not_found(): void
     {
-        $owner = User::factory()->create();
+        $owner = User::factory()->for($this->defaultClient)->create();
         IdApiGuard::current()->loginWithRefreshToken($owner);
         $sessionId = AuthSession::query()->where('user_id', $owner->id)->value('id');
 
-        $intruder = User::factory()->create();
+        $intruder = User::factory()->for($this->defaultClient)->create();
         $intruderTokens = IdApiGuard::current()->loginWithRefreshToken($intruder);
 
         $this->withToken($intruderTokens->accessToken)

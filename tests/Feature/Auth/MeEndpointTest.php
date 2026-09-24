@@ -7,15 +7,16 @@ use App\Auth\Guards\IdApiGuard;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\ActsAsClient;
 use Tests\TestCase;
 
 class MeEndpointTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ActsAsClient;
 
     public function test_it_decodes_the_current_token(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->for($this->defaultClient)->create();
         $user->assignRole(Role::findOrCreate(RoleName::User, 'id-api'));
 
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);

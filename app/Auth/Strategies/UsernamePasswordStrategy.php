@@ -2,6 +2,7 @@
 
 namespace App\Auth\Strategies;
 
+use App\Auth\CurrentClient;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\Rescue\RescueContactResolver;
 use App\Auth\Strategies\Contracts\ResetsPassword;
@@ -11,7 +12,6 @@ use App\Exceptions\Auth\InvalidOtpException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
-use Illuminate\Validation\Rule;
 
 final readonly class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPassword
 {
@@ -19,10 +19,11 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
         AuthProviderRepositoryInterface $providers,
         RegistrationVerifier $verification,
         IdentityChangeLogRepositoryInterface $history,
+        CurrentClient $currentClient,
         private CodeBasedPasswordReset $reset,
         private RescueContactResolver $rescue,
     ) {
-        parent::__construct($providers, $verification, $history);
+        parent::__construct($providers, $verification, $history, $currentClient);
     }
 
     /**
@@ -52,11 +53,7 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
     protected function identifierRules(): array
     {
         return [
-            'username' => [
-                'required', 'string', 'max:255', 'alpha_dash',
-                Rule::unique('auth_providers', 'identifier')
-                    ->where('provider', AuthProviderName::UsernamePassword->value),
-            ],
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', $this->uniqueIdentifierRule()],
         ];
     }
 

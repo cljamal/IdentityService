@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Auth\AuthStrategyResolver;
+use App\Auth\CurrentClient;
 use App\Auth\Guards\IdApiGuard;
 use App\Auth\Rescue\ChainedRescueContactResolver;
 use App\Auth\Rescue\LinkedIdentityRescueContactResolver;
@@ -38,6 +39,7 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(AuthSessionRepositoryInterface::class, EloquentAuthSessionRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, EloquentRoleRepository::class);
         $this->app->singleton(AuthStrategyResolver::class);
+        $this->app->singleton(CurrentClient::class);
 
         $this->app->bind(SmsNotifier::class, LoggingSmsNotifier::class);
         $this->app->bind(EmailNotifier::class, LoggingEmailNotifier::class);

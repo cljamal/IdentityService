@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Auth\CurrentClient;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Events\Auth\UserHasNoRole;
@@ -16,7 +17,10 @@ use Throwable;
 
 final readonly class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
 {
-    public function __construct(private IdentityChangeLogRepositoryInterface $history) {}
+    public function __construct(
+        private IdentityChangeLogRepositoryInterface $history,
+        private CurrentClient $currentClient,
+    ) {}
 
     /**
      * @throws IdentifierAlreadyTakenException
@@ -41,6 +45,7 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
     public function findByIdentifier(AuthProviderName $provider, string $identifier): ?AuthProvider
     {
         return AuthProvider::query()
+            ->where('client_id', $this->currentClient->get()->id)
             ->where('provider', $provider->value)
             ->where('identifier', $identifier)
             ->first();
@@ -49,6 +54,7 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
     public function findByUser(AuthProviderName $provider, User $user): ?AuthProvider
     {
         return AuthProvider::query()
+            ->where('client_id', $this->currentClient->get()->id)
             ->where('provider', $provider->value)
             ->where('user_id', $user->id)
             ->first();
@@ -67,6 +73,7 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
     public function markVerified(AuthProviderName $provider, User $user): void
     {
         AuthProvider::query()
+            ->where('client_id', $this->currentClient->get()->id)
             ->where('provider', $provider->value)
             ->where('user_id', $user->id)
             ->update(['verified_at' => now()]);
@@ -83,7 +90,10 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
 
     public function releaseAllForUser(User $user): void
     {
-        $identities = AuthProvider::query()->where('user_id', $user->id)->get();
+        $identities = AuthProvider::query()
+            ->where('client_id', $this->currentClient->get()->id)
+            ->where('user_id', $user->id)
+            ->get();
 
         foreach ($identities as $identity) {
             $provider = AuthProviderName::tryFrom($identity->provider);
@@ -108,11 +118,14 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
         bool $verified = false,
     ): User {
         return DB::transaction(function () use ($provider, $identifier, $meta, $verified) {
-            $user = User::query()->create([]);
+            $clientId = $this->currentClient->get()->id;
+
+            $user = User::query()->create(['client_id' => $clientId]);
 
             try {
                 AuthProvider::query()->create([
                     'user_id' => $user->id,
+                    'client_id' => $clientId,
                     'provider' => $provider->value,
                     'identifier' => $identifier,
                     'meta' => $meta ?: null,
