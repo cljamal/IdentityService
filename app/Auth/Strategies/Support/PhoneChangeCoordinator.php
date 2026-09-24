@@ -5,6 +5,7 @@ namespace App\Auth\Strategies\Support;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\History\IdentityChangeAction;
 use App\Events\Notifications\OtpCodeIssued;
+use App\Events\Ops\UserPhoneChanged;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Exceptions\Auth\OtpThrottledException;
@@ -109,6 +110,8 @@ final readonly class PhoneChangeCoordinator
         $this->providers->changeIdentifier($identity, $newPhone);
 
         $this->history->log($user, AuthProviderName::PhoneOtp, IdentityChangeAction::IdentifierChanged, $oldPhone, $newPhone);
+
+        UserPhoneChanged::dispatch($user, $oldPhone, $newPhone);
 
         $this->challenge->forget($this->newSubject($user));
         $this->otp->forget($this->pendingSubject($user));

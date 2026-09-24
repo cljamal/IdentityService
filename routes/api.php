@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BroadcastingClientAuthController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\IdentifierChangeController;
 use App\Http\Controllers\MeController;
@@ -9,6 +10,14 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\VerificationCodeController;
 use Illuminate\Support\Facades\Route;
+
+// Client-secret-authenticated counterpart to the framework's own
+// POST /api/broadcasting/auth (registered by withBroadcasting() in
+// bootstrap/app.php, behind auth:id-api). Lets a client's Gateway
+// subscribe to its own private WS channel (see routes/channels.php)
+// using the same X-Client-Id/X-Client-Secret it uses everywhere else.
+Route::post('broadcasting/client-auth', BroadcastingClientAuthController::class)
+    ->middleware(['api', 'client']);
 
 Route::group(['middleware' => ['api', 'client'], 'prefix' => 'auth'], function () {
     Route::group(['prefix' => '{provider}'], function () {

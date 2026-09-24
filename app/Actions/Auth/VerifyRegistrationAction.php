@@ -8,6 +8,7 @@ use App\Auth\Guards\IdApiGuard;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\RegistersIdentity;
 use App\Auth\TokenPair;
+use App\Events\Ops\UserRegistered;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -36,6 +37,8 @@ final readonly class VerifyRegistrationAction
         Validator::make($data, $strategy->registrationVerificationRules())->validate();
 
         $user = $strategy->verifyRegistration($data);
+
+        UserRegistered::dispatch($user, $provider);
 
         return IdApiGuard::current()->loginWithRefreshToken($user);
     }

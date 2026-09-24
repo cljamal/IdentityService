@@ -5,6 +5,7 @@ namespace App\Auth\Guards;
 use App\Auth\CurrentClient;
 use App\Auth\RefreshToken;
 use App\Auth\TokenPair;
+use App\Events\Ops\RefreshTokenReuseDetected;
 use App\Exceptions\Auth\InvalidRefreshTokenException;
 use App\Exceptions\Auth\RefreshTokenReusedException;
 use App\Models\User;
@@ -254,6 +255,13 @@ final class IdApiGuard extends JWTGuard
         }
 
         $this->sessions->revoke($reused);
+
+        /** @var User|null $user */
+        $user = $reused->user;
+
+        if ($user !== null) {
+            RefreshTokenReuseDetected::dispatch($user, $this->request->ip(), $this->request->userAgent());
+        }
 
         throw new RefreshTokenReusedException;
     }

@@ -4,6 +4,7 @@ namespace App\Actions\Auth;
 
 use App\Auth\Guards\IdApiGuard;
 use App\Auth\History\IdentityChangeAction;
+use App\Events\Ops\AccountDeleted;
 use App\Models\User;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
@@ -39,5 +40,7 @@ final readonly class DeleteAccountAction
 
         // Инвалидируем токен, которым выполнялся этот запрос.
         IdApiGuard::current()->logout();
+
+        AccountDeleted::dispatch($user);
     }
 }

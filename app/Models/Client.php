@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\Auth\ClientActivated;
 use App\Events\Auth\ClientDeactivated;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,7 +42,13 @@ final class Client extends Model
     protected static function booted(): void
     {
         static::updated(function (self $client): void {
-            if ($client->wasChanged('is_active') && ! $client->is_active) {
+            if (! $client->wasChanged('is_active')) {
+                return;
+            }
+
+            if ($client->is_active) {
+                ClientActivated::dispatch($client);
+            } else {
                 ClientDeactivated::dispatch($client);
             }
         });

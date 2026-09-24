@@ -4,10 +4,12 @@ namespace App\Actions\Auth;
 
 use App\Auth\AuthStrategyResolver;
 use App\Auth\Enums\AuthProviderName;
+use App\Auth\Enums\SessionRevocationReason;
 use App\Auth\Guards\IdApiGuard;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\TokenPair;
+use App\Events\Ops\UserSessionRevoked;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Support\Facades\Validator;
@@ -45,6 +47,8 @@ final readonly class ResetPasswordAction
         // issued under — revoke every existing session before issuing the
         // fresh one below.
         $this->sessions->revokeAllForUser($user);
+
+        UserSessionRevoked::dispatch($user, SessionRevocationReason::PasswordReset);
 
         return IdApiGuard::current()->loginWithRefreshToken($user);
     }

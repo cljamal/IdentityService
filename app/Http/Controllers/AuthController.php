@@ -7,9 +7,12 @@ use App\Actions\Auth\RefreshTokenAction;
 use App\Actions\Auth\RegisterAction;
 use App\Actions\Auth\VerifyRegistrationAction;
 use App\Auth\Enums\AuthProviderName;
+use App\Auth\Enums\SessionRevocationReason;
 use App\Auth\Guards\IdApiGuard;
+use App\Events\Ops\UserSessionRevoked;
 use App\Http\Resources\Auth\TokenResource;
 use App\Http\Resources\MessageResource;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 final class AuthController extends Controller
@@ -48,7 +51,14 @@ final class AuthController extends Controller
      */
     public function logout(): MessageResource
     {
-        IdApiGuard::current()->logout();
+        $guard = IdApiGuard::current();
+
+        /** @var User $user */
+        $user = $guard->user();
+
+        $guard->logout();
+
+        UserSessionRevoked::dispatch($user, SessionRevocationReason::Logout);
 
         return MessageResource::make('Successfully logged out');
     }

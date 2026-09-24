@@ -2,6 +2,8 @@
 
 namespace App\Actions\Auth;
 
+use App\Auth\Enums\SessionRevocationReason;
+use App\Events\Ops\UserSessionRevoked;
 use App\Exceptions\Auth\SessionNotFoundException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
@@ -25,5 +27,7 @@ final readonly class RevokeSessionAction
         }
 
         $this->sessions->revokeByJti($session->jti);
+
+        UserSessionRevoked::dispatch($user, SessionRevocationReason::ExplicitRevoke);
     }
 }

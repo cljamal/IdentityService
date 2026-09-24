@@ -14,6 +14,7 @@ use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Support\AccountDeletionConfirmer;
 use App\Auth\Strategies\Support\PhoneChangeCoordinator;
 use App\Events\Notifications\OtpCodeIssued;
+use App\Events\Ops\UserRegistered;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Exceptions\Auth\OtpThrottledException;
@@ -112,6 +113,15 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
         }
 
         $user = $this->providers->firstOrCreateUser(AuthProviderName::PhoneOtp, $phone);
+
+        // wasRecentlyCreated is Eloquent's own "did create() just insert this
+        // row" flag — firstOrCreateUser() either found an existing identity
+        // or created one via createUserWithIdentity(), so this is exactly
+        // "is this phone number new" without needing the repository to
+        // return anything extra to say so.
+        if ($user->wasRecentlyCreated) {
+            UserRegistered::dispatch($user, AuthProviderName::PhoneOtp);
+        }
 
         // Код "сжигаем" только после успешного логина/создания юзера —
         // иначе сбой записи в БД потерял бы уже введённый верный код.

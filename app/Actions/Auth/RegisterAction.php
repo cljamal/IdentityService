@@ -8,6 +8,7 @@ use App\Auth\Guards\IdApiGuard;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\RegistersIdentity;
 use App\Auth\TokenPair;
+use App\Events\Ops\UserRegistered;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Validator;
@@ -46,6 +47,8 @@ final readonly class RegisterAction
         if (! $result->verified) {
             return null;
         }
+
+        UserRegistered::dispatch($result->user, $provider);
 
         return IdApiGuard::current()->loginWithRefreshToken($result->user);
     }
