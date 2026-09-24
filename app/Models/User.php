@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,17 +16,27 @@ use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
- * @property string|null $name
+ * @property string $uuid
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
  * @property-read Collection<int, AuthProvider> $authProviders
  */
-#[Fillable(['name'])]
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes, HasUuids;
+
+    /**
+     * Tell HasUuids to populate `uuid`, not the `id` primary key — `id`
+     * stays a plain auto-increment int used only for FKs/indexing.
+     *
+     * @return array<int, string>
+     */
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
 
     /**
      * @return HasMany<AuthProvider, $this>
@@ -37,11 +47,20 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
+     * The public, external-facing identifier. `id` stays internal
+     * (FKs, indexing) and is never exposed to clients or tokens.
+     */
+    public function getAuthIdentifierName(): string
+    {
+        return 'uuid';
+    }
+
+    /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      */
     public function getJWTIdentifier(): mixed
     {
-        return $this->getKey();
+        return $this->getAuthIdentifier();
     }
 
     /**

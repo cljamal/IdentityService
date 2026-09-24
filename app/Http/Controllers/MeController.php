@@ -30,7 +30,7 @@ final class MeController extends Controller
 
         return response()->json([
             'user' => [
-                'id' => $payload->get('sub'),
+                'uuid' => $payload->get('sub'),
                 'role' => $payload->get('role'),
             ],
             'claims' => $payload->toArray(),

@@ -23,12 +23,12 @@ class MeEndpointTest extends TestCase
         $response = $this->withToken($token)->getJson('/api/auth/me');
 
         $response->assertOk()
-            ->assertJsonPath('user.id', $user->id)
+            ->assertJsonPath('user.uuid', $user->uuid)
             ->assertJsonPath('user.role', RoleName::User->value)
-            ->assertJsonPath('claims.sub', $user->id)
+            ->assertJsonPath('claims.sub', $user->uuid)
             ->assertJsonPath('claims.role', RoleName::User->value)
             ->assertJsonStructure([
-                'user' => ['id', 'role'],
+                'user' => ['uuid', 'role'],
                 'claims' => ['sub', 'iat', 'exp', 'jti', 'role'],
                 'readable' => ['issued_at', 'expires_at', 'age_seconds', 'expires_in_seconds'],
             ]);
