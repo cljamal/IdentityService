@@ -44,6 +44,19 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
+     * IdApiGuard compares this against Client::$id with a strict `!==` —
+     * without an explicit cast, a PDO driver that stringifies every column
+     * (e.g. MySQL with emulated prepares) would make that comparison always
+     * fail, since neither side is cast to a common type by default.
+     */
+    protected function casts(): array
+    {
+        return [
+            'client_id' => 'integer',
+        ];
+    }
+
+    /**
      * @return BelongsTo<Client, $this>
      */
     public function client(): BelongsTo

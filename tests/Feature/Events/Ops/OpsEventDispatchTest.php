@@ -15,7 +15,6 @@ use App\Models\AuthSession;
 use App\Models\User;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Tests\Concerns\ActsAsClient;
@@ -25,13 +24,6 @@ use Tests\TestCase;
 class OpsEventDispatchTest extends TestCase
 {
     use RefreshDatabase, ActsAsClient;
-
-    protected function tearDown(): void
-    {
-        Carbon::setTestNow();
-
-        parent::tearDown();
-    }
 
     public function test_logout_dispatches_user_session_revoked(): void
     {
@@ -138,9 +130,6 @@ class OpsEventDispatchTest extends TestCase
         $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])->assertOk();
-
-        // Past the reuse grace window (see IdApiGuard::rejectReplayedRefreshToken).
-        Carbon::setTestNow(Carbon::now()->addSeconds(31));
 
         Event::fake([RefreshTokenReuseDetected::class]);
 

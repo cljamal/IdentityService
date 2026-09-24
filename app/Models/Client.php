@@ -35,6 +35,11 @@ final class Client extends Model
     protected function casts(): array
     {
         return [
+            // Explicit, even for the PK: IdApiGuard compares this against
+            // User::$client_id with strict `!==`. Both sides need the same
+            // guaranteed type regardless of what a given PDO driver's
+            // emulation settings would otherwise return them as.
+            'id' => 'integer',
             'is_active' => 'bool',
         ];
     }

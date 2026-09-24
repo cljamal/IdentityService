@@ -5,6 +5,14 @@ namespace App\Events\Ops;
 use App\Models\Client;
 use App\Models\User;
 
+/**
+ * Deliberate, not an oversight: old_phone/new_phone go out unmasked (unlike
+ * OtpCodeBroadcast's masked contact on the much more broadly-authorized
+ * 'otp-deliveries' channel). This channel is scoped to exactly the one
+ * client that owns this user's account — data they already hold, since
+ * their own Gateway is what proxied the phone-change request in the first
+ * place. Revisit this if the channel's authorization model ever widens.
+ */
 final class UserPhoneChanged extends OpsBroadcastEvent
 {
     public function __construct(

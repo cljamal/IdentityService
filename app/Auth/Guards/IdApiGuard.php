@@ -239,6 +239,13 @@ final class IdApiGuard extends JWTGuard
     }
 
     /**
+     * A grace window that tolerated a replayed-but-recent previous token was
+     * tried here and removed: the presenting caller got 401 either way (no
+     * new pair — a genuine retry never actually recovered), so the only
+     * effect was suppressing REVOKED detection for up to N seconds after
+     * every rotation, exactly the window an actual thief would use. Erring
+     * toward detection over convenience for an auth service.
+     *
      * @throws InvalidRefreshTokenException
      * @throws RefreshTokenReusedException
      */
@@ -247,10 +254,6 @@ final class IdApiGuard extends JWTGuard
         $reused = $this->sessions->findByPreviousRefreshTokenHash($hash);
 
         if ($reused === null) {
-            throw new InvalidRefreshTokenException;
-        }
-
-        if ($reused->updated_at->diffInSeconds(now()) <= (int) config('identity.refresh_reuse_grace_seconds')) {
             throw new InvalidRefreshTokenException;
         }
 

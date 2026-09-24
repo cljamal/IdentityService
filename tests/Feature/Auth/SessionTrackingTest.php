@@ -7,20 +7,12 @@ use App\Models\AuthSession;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Tests\Concerns\ActsAsClient;
 use Tests\TestCase;
 
 class SessionTrackingTest extends TestCase
 {
     use RefreshDatabase, ActsAsClient;
-
-    protected function tearDown(): void
-    {
-        Carbon::setTestNow();
-
-        parent::tearDown();
-    }
 
     public function test_login_records_a_session(): void
     {
@@ -58,34 +50,15 @@ class SessionTrackingTest extends TestCase
 
         $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])->assertOk();
 
-        // Past the reuse grace window, so this isn't mistaken for an
-        // honest client retry — see the grace-window test below for that.
-        Carbon::setTestNow(Carbon::now()->addSeconds(31));
-
+        // No grace window: a previous-generation token is always treated as
+        // reused, immediately, even on the very next request — see
+        // IdApiGuard::rejectReplayedRefreshToken().
         $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])
             ->assertUnauthorized()
             ->assertJsonPath('code', 'REFRESH_TOKEN_REUSED');
 
         $session = AuthSession::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertNotNull($session->revoked_at);
-    }
-
-    public function test_replaying_a_rotated_refresh_token_within_the_grace_window_does_not_revoke_the_session(): void
-    {
-        $user = User::factory()->for($this->defaultClient)->create();
-        $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
-
-        $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])->assertOk();
-
-        // Immediately replaying the same, now-rotated token looks like a
-        // client retry after a lost response (timeout, dropped connection),
-        // not theft — rejected, but the session must survive it.
-        $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])
-            ->assertUnauthorized()
-            ->assertJsonPath('code', 'INVALID_REFRESH_TOKEN');
-
-        $session = AuthSession::query()->where('user_id', $user->id)->firstOrFail();
-        $this->assertNull($session->revoked_at);
     }
 
     public function test_refresh_rejects_an_unknown_token(): void

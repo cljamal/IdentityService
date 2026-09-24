@@ -23,6 +23,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'client' => \App\Http\Middleware\AuthenticateClient::class,
         ]);
+
+        // Without this, SortedMiddleware (using the framework's default
+        // priority list — this app never overrides it) always moves
+        // Authenticate ("auth:id-api") ahead of any middleware not in that
+        // list, "client" included, on every route that combines both (me,
+        // sessions, logout, password/change, ...). IdApiGuard::user() would
+        // then run before AuthenticateClient ever populates CurrentClient,
+        // so its cross-client check silently no-ops and caches the user —
+        // an access token minted under Client A authenticates through
+        // Client B's credentials. This forces "client" to run first.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: \App\Http\Middleware\AuthenticateClient::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
