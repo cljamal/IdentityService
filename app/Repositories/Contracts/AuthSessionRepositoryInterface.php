@@ -3,6 +3,7 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\AuthSession;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -44,6 +45,14 @@ interface AuthSessionRepositoryInterface
     public function revoke(AuthSession $session): void;
 
     public function revokeAllForUser(User $user): void;
+
+    /**
+     * Revokes every non-revoked session belonging to any user under this
+     * client — used when a client is deactivated (see ClientDeactivated),
+     * so `revoked_at` reflects reality instead of sessions sitting there
+     * looking active just because nothing naturally expired them.
+     */
+    public function revokeAllForClient(Client $client): void;
 
     /**
      * True if this jti isn't a session's current one any more — either

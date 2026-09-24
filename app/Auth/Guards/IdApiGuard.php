@@ -91,15 +91,21 @@ final class IdApiGuard extends JWTGuard
     /**
      * As parent, but a token whose jti was explicitly revoked (via the
      * sessions endpoint) is rejected even though it's still
-     * cryptographically valid and unexpired, and a token minted for a
-     * different client than the one authenticated on this request is
-     * rejected the same way — a token leaked from Client A's Gateway must
-     * not work when replayed through Client B's.
+     * cryptographically valid and unexpired, same for a token whose owner's
+     * client has since been deactivated, and same for a token minted for a
+     * different client than the one authenticated on this request — a
+     * token leaked from Client A's Gateway must not work when replayed
+     * through Client B's.
      *
-     * The client check is skipped (not enforced as "must be null") when no
-     * client resolved at all: this guard is also used on
-     * /api/broadcasting/auth (see bootstrap/app.php), which sits outside
-     * the /api/auth prefix the "client" middleware wraps.
+     * The deactivation check reads $user->client->is_active fresh from the
+     * DB rather than trusting the JWT's client_id claim, and runs
+     * regardless of whether a client was resolved for this request at all
+     * — this guard is also used on /api/broadcasting/auth (see
+     * bootstrap/app.php), which sits outside the /api/auth prefix the
+     * "client" middleware wraps, so a deactivated client's already-issued
+     * tokens must not keep working there just because that route never
+     * runs AuthenticateClient. The cross-client claim check further below
+     * still only applies where a client *was* resolved.
      */
     public function user(): ?Authenticatable
     {
@@ -116,6 +122,13 @@ final class IdApiGuard extends JWTGuard
         $payload = $this->getPayload();
 
         if ($this->sessions->isRevoked($payload->get('jti'))) {
+            $this->user = null;
+
+            return null;
+        }
+
+        /** @var User $user */
+        if (! $user->client->is_active) {
             $this->user = null;
 
             return null;

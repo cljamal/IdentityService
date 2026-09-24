@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\AuthSession;
+use App\Models\Client;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Support\Carbon;
@@ -73,6 +74,14 @@ final class EloquentAuthSessionRepository implements AuthSessionRepositoryInterf
     {
         AuthSession::query()
             ->where('user_id', $user->id)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
+    }
+
+    public function revokeAllForClient(Client $client): void
+    {
+        AuthSession::query()
+            ->whereIn('user_id', User::query()->where('client_id', $client->id)->select('id'))
             ->whereNull('revoked_at')
             ->update(['revoked_at' => now()]);
     }
