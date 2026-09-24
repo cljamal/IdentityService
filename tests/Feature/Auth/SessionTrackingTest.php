@@ -3,11 +3,15 @@
 namespace Tests\Feature\Auth;
 
 use App\Auth\Guards\IdApiGuard;
+use App\Events\Ops\RefreshTokenReuseDetected;
 use App\Models\AuthSession;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
+use App\Repositories\EloquentAuthSessionRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\Concerns\ActsAsClient;
+use Tests\Fakes\RotationRaceLosingAuthSessionRepository;
 use Tests\TestCase;
 
 class SessionTrackingTest extends TestCase
@@ -59,6 +63,42 @@ class SessionTrackingTest extends TestCase
 
         $session = AuthSession::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertNotNull($session->revoked_at);
+    }
+
+    public function test_losing_a_concurrent_refresh_race_does_not_revoke_the_winners_session(): void
+    {
+        // Two requests refreshing the same token at once both read the
+        // session before either writes: the winner's rotate() succeeds,
+        // the loser's reports false (see EloquentAuthSessionRepository::
+        // rotate()'s conditional UPDATE). That's an ordinary race, not a
+        // replay of a stale token — it must not revoke the session the
+        // winner just rotated into, nor raise a reuse alert.
+        //
+        // The bind() must happen before the guard is ever resolved:
+        // AuthManager::guard() caches resolved guards for the app's
+        // lifetime ($this->guards[$name] ??= ...), and IdApiGuard is
+        // constructed with whatever AuthSessionRepositoryInterface was
+        // bound at that moment. Binding afterwards — even before the
+        // postJson() call below — would have no effect, since the
+        // already-cached guard keeps its original (real) repository.
+        $this->app->bind(
+            AuthSessionRepositoryInterface::class,
+            fn () => new RotationRaceLosingAuthSessionRepository(new EloquentAuthSessionRepository),
+        );
+
+        $user = User::factory()->for($this->defaultClient)->create();
+        $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
+
+        Event::fake([RefreshTokenReuseDetected::class]);
+
+        $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])
+            ->assertUnauthorized()
+            ->assertJsonPath('code', 'INVALID_REFRESH_TOKEN');
+
+        Event::assertNotDispatched(RefreshTokenReuseDetected::class);
+
+        $session = AuthSession::query()->where('user_id', $user->id)->firstOrFail();
+        $this->assertNull($session->revoked_at);
     }
 
     public function test_refresh_rejects_an_unknown_token(): void

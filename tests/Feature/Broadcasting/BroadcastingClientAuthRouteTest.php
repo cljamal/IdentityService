@@ -33,7 +33,13 @@ class BroadcastingClientAuthRouteTest extends TestCase
             ->assertJsonPath('code', 'CLIENT_AUTHENTICATION_FAILED');
     }
 
-    public function test_a_client_can_authenticate_for_its_own_channel(): void
+    /**
+     * The "log" driver's validAuthenticationResponse() is an empty no-op
+     * (returns null), so this only proves our own authorization passes —
+     * it says nothing about the response body/format a real Pusher/Reverb
+     * driver would actually send back to the client.
+     */
+    public function test_a_client_is_authorized_for_its_own_private_channel(): void
     {
         $client = Client::factory()->create();
 
@@ -44,6 +50,42 @@ class BroadcastingClientAuthRouteTest extends TestCase
             'channel_name' => 'private-client.'.$client->client_id,
             'socket_id' => '1234.5678',
         ])->assertSuccessful();
+    }
+
+    public function test_a_presence_channel_is_rejected(): void
+    {
+        $client = Client::factory()->create();
+
+        // PusherBroadcaster::validAuthenticationResponse() branches on
+        // str_starts_with($request->channel_name, 'private') — anything
+        // else falls into its presence-channel branch, which calls
+        // retrieveUser() and then ->getAuthIdentifier() on the result.
+        // There's no end-user on this route, so that would be a null
+        // method call (fatal error) if this ever reached
+        // validAuthenticationResponse() — it must be rejected before that.
+        $this->withHeaders([
+            'X-Client-Id' => $client->client_id,
+            'X-Client-Secret' => ClientFactory::PLAIN_SECRET,
+        ])->postJson('/api/broadcasting/client-auth', [
+            'channel_name' => 'presence-client.'.$client->client_id,
+            'socket_id' => '1234.5678',
+        ])->assertForbidden();
+    }
+
+    public function test_a_channel_without_the_private_prefix_is_rejected(): void
+    {
+        $client = Client::factory()->create();
+
+        // Same crash risk as the presence case above, plus a public
+        // channel has no legitimate reason to call this auth endpoint at
+        // all in the real protocol.
+        $this->withHeaders([
+            'X-Client-Id' => $client->client_id,
+            'X-Client-Secret' => ClientFactory::PLAIN_SECRET,
+        ])->postJson('/api/broadcasting/client-auth', [
+            'channel_name' => 'client.'.$client->client_id,
+            'socket_id' => '1234.5678',
+        ])->assertForbidden();
     }
 
     public function test_a_client_cannot_authenticate_for_another_clients_channel(): void

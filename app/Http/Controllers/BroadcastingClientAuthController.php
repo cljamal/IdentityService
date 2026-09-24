@@ -24,12 +24,31 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  * authorization ourselves and calling validAuthenticationResponse()
  * directly skips that driver-specific gate while still producing whatever
  * wire-format response the configured driver actually expects.
+ *
+ * Only the "private-" prefix is accepted, and it's checked before anything
+ * else runs. PusherBroadcaster::validAuthenticationResponse() branches on
+ * str_starts_with($request->channel_name, 'private') — anything else
+ * (a "presence-" channel, or a bare public one with no prefix at all)
+ * falls into its presence-channel branch, which calls
+ * $user->getAuthIdentifier() on whatever retrieveUser() returns. There is
+ * no end-user on this route, so that's always null, and PHP fatals calling
+ * a method on it. A public channel needs no auth call at all in the real
+ * protocol, and this client-channel feature has no presence use case, so
+ * both are rejected outright rather than routed into that branch.
  */
 final class BroadcastingClientAuthController extends Controller
 {
+    private const string PRIVATE_PREFIX = 'private-';
+
     public function __invoke(Request $request, ClientChannelAuthorizer $authorizer)
     {
-        $channelName = preg_replace('/^(private-|presence-)/', '', (string) $request->channel_name);
+        $channelName = (string) $request->channel_name;
+
+        if (! str_starts_with($channelName, self::PRIVATE_PREFIX)) {
+            throw new AccessDeniedHttpException;
+        }
+
+        $channelName = substr($channelName, strlen(self::PRIVATE_PREFIX));
 
         if (! preg_match('/^client\.(?<clientId>.+)$/', $channelName, $matches)) {
             throw new AccessDeniedHttpException;

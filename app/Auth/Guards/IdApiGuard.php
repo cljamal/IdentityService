@@ -228,11 +228,17 @@ final class IdApiGuard extends JWTGuard
 
         if (! $rotated) {
             // Someone else rotated this exact token first between our
-            // lookup above and this write — a concurrent refresh, either
-            // a legitimate retry or a live race with whoever else has
-            // this token. Whoever loses the race is treated exactly like
-            // a replay: we can't tell the two apart from here.
-            $this->rejectReplayedRefreshToken($hash);
+            // lookup above and this write — an ordinary concurrent refresh
+            // (two tabs, a client retrying its own in-flight request), not
+            // a replay of a stale token: $hash was still the session's
+            // *current* hash when we read it above. Calling
+            // rejectReplayedRefreshToken() here would look up "previous",
+            // find the row the winner's rotate() just wrote (its
+            // previous_refresh_token_hash is exactly this $hash), and
+            // revoke the winner's brand-new session while firing a false
+            // compromise alert — for every ordinary double-fire, not just
+            // an attack.
+            throw new InvalidRefreshTokenException;
         }
 
         return new TokenPair($accessToken, $newRefreshToken->plainText);
