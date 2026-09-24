@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class UserPhoneChangedBroadcastTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     public function test_confirming_a_phone_change_dispatches_user_phone_changed(): void
     {

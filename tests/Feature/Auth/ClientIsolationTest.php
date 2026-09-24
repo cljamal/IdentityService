@@ -8,6 +8,7 @@ use App\Repositories\Contracts\OtpRepositoryInterface;
 use Database\Factories\ClientFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\Fakes\FakeOtpRepository;
 use Tests\TestCase;
 
@@ -113,6 +114,9 @@ class ClientIsolationTest extends TestCase
         ];
     }
 
+    /**
+     * @return TestResponse<Response>
+     */
     private function registerUsernamePassword(Client $client, string $username): TestResponse
     {
         return $this->withHeaders($this->headersFor($client))

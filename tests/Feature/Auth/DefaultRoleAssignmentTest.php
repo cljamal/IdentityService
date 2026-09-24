@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class DefaultRoleAssignmentTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     public function test_registration_assigns_the_default_user_role(): void
     {

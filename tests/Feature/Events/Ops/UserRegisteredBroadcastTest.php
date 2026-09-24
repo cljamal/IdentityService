@@ -19,7 +19,7 @@ use Tests\TestCase;
  */
 class UserRegisteredBroadcastTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     public function test_phone_otp_auto_registration_dispatches_user_registered(): void
     {

@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class RoleClaimTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     public function test_role_claim_is_null_for_a_user_without_a_role(): void
     {

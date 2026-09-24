@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class ClientDeactivationTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     /**
      * Not load-bearing for security (AuthenticateClient and IdApiGuard::user()

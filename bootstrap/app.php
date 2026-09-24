@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\AuthenticateClient;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'client' => \App\Http\Middleware\AuthenticateClient::class,
+            'client' => AuthenticateClient::class,
         ]);
 
         // Without this, SortedMiddleware (using the framework's default
@@ -34,8 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // an access token minted under Client A authenticates through
         // Client B's credentials. This forces "client" to run first.
         $middleware->prependToPriorityList(
-            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
-            prepend: \App\Http\Middleware\AuthenticateClient::class,
+            before: AuthenticatesRequests::class,
+            prepend: AuthenticateClient::class,
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

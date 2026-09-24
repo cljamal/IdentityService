@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class SessionTrackingTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     public function test_login_records_a_session(): void
     {

@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 class MeEndpointTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     public function test_it_decodes_the_current_token(): void
     {

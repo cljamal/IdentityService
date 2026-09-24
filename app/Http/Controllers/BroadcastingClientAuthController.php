@@ -40,7 +40,7 @@ final class BroadcastingClientAuthController extends Controller
 {
     private const string PRIVATE_PREFIX = 'private-';
 
-    public function __invoke(Request $request, ClientChannelAuthorizer $authorizer)
+    public function __invoke(Request $request, ClientChannelAuthorizer $authorizer): mixed
     {
         $channelName = (string) $request->channel_name;
 

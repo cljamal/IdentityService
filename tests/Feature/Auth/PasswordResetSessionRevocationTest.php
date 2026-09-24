@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class PasswordResetSessionRevocationTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     /**
      * A refresh token is a long-lived (14-day) bearer credential now, so a

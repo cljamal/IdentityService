@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Events\Auth\ClientActivated;
 use App\Events\Auth\ClientDeactivated;
 use Database\Factories\ClientFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,7 +22,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_active
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, User> $users
+ * @property-read Collection<int, User> $users
  */
 final class Client extends Model
 {
@@ -46,7 +47,7 @@ final class Client extends Model
 
     protected static function booted(): void
     {
-        static::updated(function (self $client): void {
+        self::updated(function (self $client): void {
             if (! $client->wasChanged('is_active')) {
                 return;
             }

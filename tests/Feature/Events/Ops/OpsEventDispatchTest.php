@@ -23,7 +23,7 @@ use Tests\TestCase;
 
 class OpsEventDispatchTest extends TestCase
 {
-    use RefreshDatabase, ActsAsClient;
+    use ActsAsClient, RefreshDatabase;
 
     public function test_logout_dispatches_user_session_revoked(): void
     {

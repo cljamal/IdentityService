@@ -23,8 +23,8 @@ final class CurrentClient
 
     /**
      * @throws LogicException if no client was resolved for this request —
-     *                         a programmer error (AuthenticateClient isn't
-     *                         wired on this route), not a client error.
+     *                        a programmer error (AuthenticateClient isn't
+     *                        wired on this route), not a client error.
      */
     public function get(): Client
     {
