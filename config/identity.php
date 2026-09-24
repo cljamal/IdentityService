@@ -37,6 +37,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Refresh Tokens
+    |--------------------------------------------------------------------------
+    |
+    | Opaque, single-use refresh tokens issued alongside every access token
+    | (see IdApiGuard::login()/refreshUsingToken()). Each /auth/refresh call
+    | rotates it onto a new value; a token presented again after it's
+    | already been rotated away is treated as leaked and revokes the whole
+    | session instead of just being rejected.
+    |
+    */
+
+    'refresh_token_ttl' => (int) env('AUTH_REFRESH_TOKEN_TTL', 20160), // minutes (14 days)
+
+    /*
+    |--------------------------------------------------------------------------
     | Username/Password Rescue Contact
     |--------------------------------------------------------------------------
     |

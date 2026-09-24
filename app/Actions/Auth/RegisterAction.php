@@ -7,6 +7,7 @@ use App\Auth\Enums\AuthProviderName;
 use App\Auth\Guards\IdApiGuard;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\RegistersIdentity;
+use App\Auth\TokenPair;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Validator;
@@ -20,13 +21,13 @@ final readonly class RegisterAction
 
     /**
      * @param  array<string, mixed>  $data
-     * @return string|null The token, or null if the identity still needs
-     *                     to be verified before it can be used to log in.
+     * @return TokenPair|null The tokens, or null if the identity still needs
+     *                        to be verified before it can be used to log in.
      *
      * @throws AuthProviderDisabledException
      * @throws UnsupportedAuthOperationException
      */
-    public function handle(AuthProviderName $provider, array $data): ?string
+    public function handle(AuthProviderName $provider, array $data): ?TokenPair
     {
         $strategy = $this->resolver->resolve($provider);
 

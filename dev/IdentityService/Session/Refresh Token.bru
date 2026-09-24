@@ -6,20 +6,26 @@ meta {
 
 post {
   url: {{baseUrl}}/auth/refresh
-  body: none
-  auth: bearer
+  body: json
+  auth: none
 }
 
-auth:bearer {
-  token: {{token}}
+body:json {
+  {
+    "refresh_token": "{{refreshToken}}"
+  }
 }
 
 script:post-response {
   if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
     bru.setEnvVar("token", res.body.data.access_token);
+    bru.setEnvVar("refreshToken", res.body.data.refresh_token);
   }
 }
 
 docs {
-  Обновляет переданный токен на новый (общая переменная token, не привязана к провайдеру).
+  Меняет refresh_token на новую пару access/refresh (общие переменные token/refreshToken,
+  не привязаны к провайдеру). Без Authorization — сам refresh_token и есть credential.
+  Старый refresh_token после этого больше не действует; повторное его предъявление
+  отзовёт всю сессию (см. REFRESH_TOKEN_REUSED).
 }

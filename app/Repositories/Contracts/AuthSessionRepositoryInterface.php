@@ -9,17 +9,33 @@ use Illuminate\Support\Collection;
 
 interface AuthSessionRepositoryInterface
 {
-    public function record(User $user, string $jti, Carbon $expiresAt, ?string $ip, ?string $userAgent): void;
+    public function record(
+        User $user,
+        string $jti,
+        Carbon $expiresAt,
+        string $refreshTokenHash,
+        Carbon $refreshExpiresAt,
+        ?string $ip,
+        ?string $userAgent,
+    ): void;
 
     /**
-     * Move an existing, non-revoked row from its old jti to a new one (a
-     * refreshed token is the same logical session, not a new one). Returns
-     * false if no matching row was found, so the caller can fall back to
-     * record().
+     * Move an existing session onto a new jti and refresh token — a
+     * refreshed token is the same logical session, not a new one. The
+     * replaced refresh token hash is kept as "previous" for exactly one
+     * generation so a replay of it can be recognized as reuse.
      */
-    public function rotate(string $oldJti, string $newJti, Carbon $expiresAt): bool;
+    public function rotate(
+        AuthSession $session,
+        string $newJti,
+        Carbon $expiresAt,
+        string $newRefreshTokenHash,
+        Carbon $newRefreshExpiresAt,
+    ): void;
 
     public function revokeByJti(string $jti): void;
+
+    public function revoke(AuthSession $session): void;
 
     public function revokeAllForUser(User $user): void;
 
@@ -29,6 +45,19 @@ interface AuthSessionRepositoryInterface
      * considered revoked.
      */
     public function isRevoked(string $jti): bool;
+
+    /**
+     * The session this refresh token currently authorizes — null if the
+     * hash is unknown, expired, or the session was revoked.
+     */
+    public function findActiveByRefreshTokenHash(string $hash): ?AuthSession;
+
+    /**
+     * A session whose refresh token was already rotated past this hash. A
+     * match means the token was replayed after it had already been used
+     * once — a strong signal it leaked — not just an unknown/expired one.
+     */
+    public function findByPreviousRefreshTokenHash(string $hash): ?AuthSession;
 
     /**
      * @return Collection<int, AuthSession>

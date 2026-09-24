@@ -14,8 +14,10 @@ enum AuthErrorCode: string
     case IdentityNotVerified = 'IDENTITY_NOT_VERIFIED';
     case InvalidCredentials = 'INVALID_CREDENTIALS';
     case InvalidOtp = 'INVALID_OTP';
+    case InvalidRefreshToken = 'INVALID_REFRESH_TOKEN';
     case NoLinkedIdentity = 'NO_LINKED_IDENTITY';
     case OtpThrottled = 'OTP_THROTTLED';
+    case RefreshTokenReused = 'REFRESH_TOKEN_REUSED';
     case SessionNotFound = 'SESSION_NOT_FOUND';
     case UnsupportedAuthOperation = 'UNSUPPORTED_AUTH_OPERATION';
 }

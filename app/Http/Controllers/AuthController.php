@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Auth\LoginAction;
+use App\Actions\Auth\RefreshTokenAction;
 use App\Actions\Auth\RegisterAction;
 use App\Actions\Auth\VerifyRegistrationAction;
 use App\Auth\Enums\AuthProviderName;
@@ -19,10 +20,10 @@ final class AuthController extends Controller
      */
     public function register(AuthProviderName $provider, Request $request): TokenResource|MessageResource
     {
-        $token = RegisterAction::run($provider, $request->all());
+        $tokens = RegisterAction::run($provider, $request->all());
 
-        return $token !== null
-            ? TokenResource::make($token)
+        return $tokens !== null
+            ? TokenResource::make($tokens)
             : MessageResource::make('Мы отправили код подтверждения. Подтвердите его, чтобы завершить регистрацию.');
     }
 
@@ -31,9 +32,7 @@ final class AuthController extends Controller
      */
     public function verifyRegistration(AuthProviderName $provider, Request $request): TokenResource
     {
-        $token = VerifyRegistrationAction::run($provider, $request->all());
-
-        return TokenResource::make($token);
+        return TokenResource::make(VerifyRegistrationAction::run($provider, $request->all()));
     }
 
     /**
@@ -41,9 +40,7 @@ final class AuthController extends Controller
      */
     public function login(AuthProviderName $provider, Request $request): TokenResource
     {
-        $token = LoginAction::run($provider, $request->all());
-
-        return TokenResource::make($token);
+        return TokenResource::make(LoginAction::run($provider, $request->all()));
     }
 
     /**
@@ -57,10 +54,12 @@ final class AuthController extends Controller
     }
 
     /**
-     * Refresh a token.
+     * Exchange a refresh token for a new access/refresh pair. Unauthenticated
+     * on purpose — the access token has usually already expired by the time
+     * a client needs this, the refresh token itself is the credential.
      */
-    public function refresh(): TokenResource
+    public function refresh(Request $request): TokenResource
     {
-        return TokenResource::make(IdApiGuard::current()->refresh());
+        return TokenResource::make(RefreshTokenAction::run($request->all()));
     }
 }

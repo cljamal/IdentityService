@@ -7,6 +7,7 @@ use App\Auth\Enums\AuthProviderName;
 use App\Auth\Guards\IdApiGuard;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;
+use App\Auth\TokenPair;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -20,7 +21,7 @@ final readonly class ResetPasswordAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(AuthProviderName $provider, array $data): string
+    public function handle(AuthProviderName $provider, array $data): TokenPair
     {
         $strategy = $this->resolver->resolve($provider);
 

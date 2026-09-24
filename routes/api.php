@@ -30,9 +30,12 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
         Route::post('account/delete/confirm', [AccountController::class, 'confirmDeletion'])->middleware(['auth:id-api', 'throttle:10,1']);
     });
 
+    // Не требует auth:id-api — access-токен к этому моменту обычно уже
+    // истёк, аутентификатор здесь сам refresh-токен из тела запроса.
+    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('throttle:10,1');
+
     Route::group(['middleware' => 'auth:id-api'], function () {
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::post('refresh', [AuthController::class, 'refresh']);
 
         Route::get('sessions', [SessionController::class, 'index']);
         Route::delete('sessions/{session}', [SessionController::class, 'destroy']);

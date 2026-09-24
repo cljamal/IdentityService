@@ -6,6 +6,7 @@ use App\Auth\AuthStrategyResolver;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\Guards\IdApiGuard;
 use App\Auth\Strategies\Contracts\NormalizesInput;
+use App\Auth\TokenPair;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Support\Facades\Validator;
@@ -23,7 +24,7 @@ final readonly class LoginAction
      * @throws AuthProviderDisabledException
      * @throws BindingResolutionException
      */
-    public function handle(AuthProviderName $provider, array $data): string
+    public function handle(AuthProviderName $provider, array $data): TokenPair
     {
         $strategy = $this->resolver->resolve($provider);
 

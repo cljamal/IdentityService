@@ -2,6 +2,10 @@
 
 namespace App\Auth\Guards;
 
+use App\Auth\RefreshToken;
+use App\Auth\TokenPair;
+use App\Exceptions\Auth\InvalidRefreshTokenException;
+use App\Exceptions\Auth\RefreshTokenReusedException;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -15,10 +19,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
-use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
 use PHPOpenSourceSaver\JWTAuth\JWT;
 use PHPOpenSourceSaver\JWTAuth\JWTGuard;
-use PHPOpenSourceSaver\JWTAuth\Token;
 
 /**
  * Our own guard for issuing/validating identity tokens, kept as a real
@@ -72,8 +74,8 @@ final class IdApiGuard extends JWTGuard
     /**
      * Typed accessor for the currently resolved "id-api" guard — PHPStan
      * only knows Auth::guard() as the generic StatefulGuard contract
-     * (login()/refresh()/getTTL() aren't on it), and this is the one
-     * place that tells it what we actually registered.
+     * (login()/refreshUsingToken()/getTTL() aren't on it), and this is the
+     * one place that tells it what we actually registered.
      */
     public static function current(): self
     {
@@ -110,65 +112,86 @@ final class IdApiGuard extends JWTGuard
     }
 
     /**
-     * As parent, but also records the freshly issued token as a session.
+     * As parent, but also issues an opaque refresh token and records both
+     * as a session.
      */
-    public function login(JWTSubject $user): string
+    public function login(JWTSubject $user): TokenPair
     {
-        $token = parent::login($user);
+        $accessToken = parent::login($user);
 
         $payload = $this->getPayload();
+        $refreshToken = RefreshToken::generate();
 
         /** @var User $user */
         $this->sessions->record(
             $user,
             $payload->get('jti'),
             Carbon::createFromTimestamp((int) $payload->get('exp')),
+            $refreshToken->hash,
+            $this->refreshTokenExpiresAt(),
             $this->request->ip(),
             $this->request->userAgent(),
         );
 
-        return $token;
+        return new TokenPair($accessToken, $refreshToken->plainText);
     }
 
     /**
-     * As parent, but rotates the old token's session onto the new jti
-     * instead of leaving a stale row behind (a refresh is a continuation
-     * of the same session, not a new login).
+     * Exchange a refresh token for a new access/refresh pair, rotating the
+     * same underlying session rather than creating a new one — a refresh
+     * is a continuation of the same session, not a new login.
      *
-     * @param  bool  $forceForever
-     * @param  bool  $resetClaims
+     * A token already rotated away and presented again is treated as
+     * stolen: the whole session is revoked instead of just being rejected.
      *
-     * @throws TokenInvalidException
+     * @throws InvalidRefreshTokenException
+     * @throws RefreshTokenReusedException
      */
-    public function refresh($forceForever = false, $resetClaims = false): string
+    public function refreshUsingToken(string $refreshToken): TokenPair
     {
-        $oldJti = $this->getPayload()->get('jti');
+        $hash = RefreshToken::hash($refreshToken);
 
-        /** @var User|null $currentUser */
-        $currentUser = $this->getUser();
+        $session = $this->sessions->findActiveByRefreshTokenHash($hash);
 
-        if ($currentUser) {
-            $this->claims($currentUser->getJWTCustomClaims());
+        if ($session === null) {
+            $reused = $this->sessions->findByPreviousRefreshTokenHash($hash);
+
+            if ($reused !== null) {
+                $this->sessions->revoke($reused);
+
+                throw new RefreshTokenReusedException;
+            }
+
+            throw new InvalidRefreshTokenException;
         }
 
-        $newToken = parent::refresh($forceForever, $resetClaims);
+        /** @var User|null $user */
+        $user = $session->user;
 
-        $payload = $this->jwt->manager()->decode(new Token($newToken));
-        $expiresAt = Carbon::createFromTimestamp((int) $payload->get('exp'));
-
-        $rotated = $this->sessions->rotate($oldJti, $payload->get('jti'), $expiresAt);
-
-        if (! $rotated && $currentUser) {
-            $this->sessions->record(
-                $currentUser,
-                $payload->get('jti'),
-                $expiresAt,
-                $this->request->ip(),
-                $this->request->userAgent(),
-            );
+        if ($user === null) {
+            throw new InvalidRefreshTokenException;
         }
 
-        return $newToken;
+        $accessToken = $this->jwt->fromUser($user);
+        $this->setToken($accessToken)->setUser($user);
+
+        $payload = $this->getPayload();
+        $newRefreshToken = RefreshToken::generate();
+
+        $this->sessions->rotate(
+            $session,
+            $payload->get('jti'),
+            Carbon::createFromTimestamp((int) $payload->get('exp')),
+            $newRefreshToken->hash,
+            $this->refreshTokenExpiresAt(),
+        );
+
+        return new TokenPair($accessToken, $newRefreshToken->plainText);
+    }
+
+    private function refreshTokenExpiresAt(): Carbon
+    {
+        return now()->addMinutes((int) config('identity.refresh_token_ttl'));
     }
 
     /**
