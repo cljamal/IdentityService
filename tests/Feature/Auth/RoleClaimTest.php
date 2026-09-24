@@ -16,7 +16,7 @@ class RoleClaimTest extends TestCase
     public function test_role_claim_is_null_for_a_user_without_a_role(): void
     {
         $user = User::factory()->create();
-        $tokens = IdApiGuard::current()->login($user);
+        $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $this->withToken($tokens->accessToken)
             ->getJson('/api/auth/me')
@@ -29,7 +29,7 @@ class RoleClaimTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole(Role::findOrCreate(RoleName::User, 'id-api'));
 
-        $tokens = IdApiGuard::current()->login($user);
+        $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $refreshed = $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken]);
         $refreshed->assertOk();
@@ -51,7 +51,7 @@ class RoleClaimTest extends TestCase
     public function test_refresh_picks_up_a_role_granted_after_the_original_login(): void
     {
         $user = User::factory()->create();
-        $tokens = IdApiGuard::current()->login($user);
+        $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $user->assignRole(Role::findOrCreate(RoleName::User, 'id-api'));
 

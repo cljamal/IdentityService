@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * One row per issued JWT (keyed by its "jti" claim). Refreshing a token
- * rotates the jti on the same row rather than creating a new one, so this
- * reflects logical sessions ("logged in from this device"), not raw tokens.
+ * One row per logical session ("logged in from this device"), not per
+ * token: it tracks both the current access token (by its "jti" claim) and
+ * the opaque refresh token that can mint the next one. Refreshing rotates
+ * both jti and refresh_token_hash on the same row instead of creating a
+ * new one; previous_refresh_token_hash keeps last generation's refresh
+ * hash around just long enough to recognize a replayed one as reuse.
  *
  * @property int $id
  * @property int|null $user_id

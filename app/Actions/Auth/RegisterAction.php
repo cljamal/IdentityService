@@ -47,6 +47,6 @@ final readonly class RegisterAction
             return null;
         }
 
-        return IdApiGuard::current()->login($result->user);
+        return IdApiGuard::current()->loginWithRefreshToken($result->user);
     }
 }

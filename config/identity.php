@@ -50,6 +50,12 @@ return [
 
     'refresh_token_ttl' => (int) env('AUTH_REFRESH_TOKEN_TTL', 20160), // minutes (14 days)
 
+    // A replayed (already-rotated-away) refresh token this soon after its
+    // rotation is treated as an honest client retry (lost response,
+    // timeout) — rejected, but without revoking the session. Past this
+    // window the same replay is treated as a leaked token instead.
+    'refresh_reuse_grace_seconds' => (int) env('AUTH_REFRESH_REUSE_GRACE_SECONDS', 30),
+
     /*
     |--------------------------------------------------------------------------
     | Username/Password Rescue Contact

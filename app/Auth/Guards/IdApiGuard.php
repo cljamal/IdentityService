@@ -74,8 +74,8 @@ final class IdApiGuard extends JWTGuard
     /**
      * Typed accessor for the currently resolved "id-api" guard — PHPStan
      * only knows Auth::guard() as the generic StatefulGuard contract
-     * (login()/refreshUsingToken()/getTTL() aren't on it), and this is the
-     * one place that tells it what we actually registered.
+     * (loginWithRefreshToken()/refreshUsingToken()/getTTL() aren't on it),
+     * and this is the one place that tells it what we actually registered.
      */
     public static function current(): self
     {
@@ -112,12 +112,16 @@ final class IdApiGuard extends JWTGuard
     }
 
     /**
-     * As parent, but also issues an opaque refresh token and records both
-     * as a session.
+     * The login flow used everywhere in this app: mints an access token via
+     * the inherited login(), pairs it with a fresh opaque refresh token,
+     * and records both as a session. Deliberately not an override of
+     * login() itself — JWTGuard fixes its return type at `string`, and
+     * returning a TokenPair from it would violate that contract for any
+     * caller still going through the plain Guard/StatefulGuard interface.
      */
-    public function login(JWTSubject $user): TokenPair
+    public function loginWithRefreshToken(JWTSubject $user): TokenPair
     {
-        $accessToken = parent::login($user);
+        $accessToken = $this->login($user);
 
         $payload = $this->getPayload();
         $refreshToken = RefreshToken::generate();
@@ -154,15 +158,7 @@ final class IdApiGuard extends JWTGuard
         $session = $this->sessions->findActiveByRefreshTokenHash($hash);
 
         if ($session === null) {
-            $reused = $this->sessions->findByPreviousRefreshTokenHash($hash);
-
-            if ($reused !== null) {
-                $this->sessions->revoke($reused);
-
-                throw new RefreshTokenReusedException;
-            }
-
-            throw new InvalidRefreshTokenException;
+            $this->rejectReplayedRefreshToken($hash);
         }
 
         /** @var User|null $user */
@@ -178,15 +174,47 @@ final class IdApiGuard extends JWTGuard
         $payload = $this->getPayload();
         $newRefreshToken = RefreshToken::generate();
 
-        $this->sessions->rotate(
+        $rotated = $this->sessions->rotate(
             $session,
             $payload->get('jti'),
             Carbon::createFromTimestamp((int) $payload->get('exp')),
             $newRefreshToken->hash,
             $this->refreshTokenExpiresAt(),
+            $this->request->ip(),
+            $this->request->userAgent(),
         );
 
+        if (! $rotated) {
+            // Someone else rotated this exact token first between our
+            // lookup above and this write — a concurrent refresh, either
+            // a legitimate retry or a live race with whoever else has
+            // this token. Whoever loses the race is treated exactly like
+            // a replay: we can't tell the two apart from here.
+            $this->rejectReplayedRefreshToken($hash);
+        }
+
         return new TokenPair($accessToken, $newRefreshToken->plainText);
+    }
+
+    /**
+     * @throws InvalidRefreshTokenException
+     * @throws RefreshTokenReusedException
+     */
+    private function rejectReplayedRefreshToken(string $hash): never
+    {
+        $reused = $this->sessions->findByPreviousRefreshTokenHash($hash);
+
+        if ($reused === null) {
+            throw new InvalidRefreshTokenException;
+        }
+
+        if ($reused->updated_at->diffInSeconds(now()) <= (int) config('identity.refresh_reuse_grace_seconds')) {
+            throw new InvalidRefreshTokenException;
+        }
+
+        $this->sessions->revoke($reused);
+
+        throw new RefreshTokenReusedException;
     }
 
     private function refreshTokenExpiresAt(): Carbon

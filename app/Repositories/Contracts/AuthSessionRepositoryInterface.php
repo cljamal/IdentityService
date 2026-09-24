@@ -24,6 +24,10 @@ interface AuthSessionRepositoryInterface
      * refreshed token is the same logical session, not a new one. The
      * replaced refresh token hash is kept as "previous" for exactly one
      * generation so a replay of it can be recognized as reuse.
+     *
+     * Only applies if $session's refresh token hash is still what the
+     * caller read it as — returns false instead of overwriting a hash
+     * some other, concurrent rotation already moved on from.
      */
     public function rotate(
         AuthSession $session,
@@ -31,7 +35,9 @@ interface AuthSessionRepositoryInterface
         Carbon $expiresAt,
         string $newRefreshTokenHash,
         Carbon $newRefreshExpiresAt,
-    ): void;
+        ?string $ip,
+        ?string $userAgent,
+    ): bool;
 
     public function revokeByJti(string $jti): void;
 
@@ -40,9 +46,10 @@ interface AuthSessionRepositoryInterface
     public function revokeAllForUser(User $user): void;
 
     /**
-     * True only if a row for this jti exists AND is marked revoked — a jti
-     * with no row at all (e.g. issued before this feature existed) is not
-     * considered revoked.
+     * True if this jti isn't a session's current one any more — either
+     * the row was explicitly revoked, or (since a refresh rotates jti in
+     * place) it has since moved on and this jti is a stale, pre-rotation
+     * token that must not keep working.
      */
     public function isRevoked(string $jti): bool;
 
@@ -53,9 +60,10 @@ interface AuthSessionRepositoryInterface
     public function findActiveByRefreshTokenHash(string $hash): ?AuthSession;
 
     /**
-     * A session whose refresh token was already rotated past this hash. A
-     * match means the token was replayed after it had already been used
-     * once — a strong signal it leaked — not just an unknown/expired one.
+     * A non-revoked session whose refresh token was already rotated past
+     * this hash. A match means the token was replayed after it had
+     * already been used once — a strong signal it leaked — not just an
+     * unknown/expired one.
      */
     public function findByPreviousRefreshTokenHash(string $hash): ?AuthSession;
 

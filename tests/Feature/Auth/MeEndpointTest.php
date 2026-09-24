@@ -18,7 +18,7 @@ class MeEndpointTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole(Role::findOrCreate(RoleName::User, 'id-api'));
 
-        $tokens = IdApiGuard::current()->login($user);
+        $tokens = IdApiGuard::current()->loginWithRefreshToken($user);
 
         $response = $this->withToken($tokens->accessToken)->getJson('/api/auth/me');
 

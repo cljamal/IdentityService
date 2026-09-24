@@ -37,6 +37,6 @@ final readonly class VerifyRegistrationAction
 
         $user = $strategy->verifyRegistration($data);
 
-        return IdApiGuard::current()->login($user);
+        return IdApiGuard::current()->loginWithRefreshToken($user);
     }
 }

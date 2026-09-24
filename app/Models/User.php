@@ -25,7 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, SoftDeletes, HasUuids;
+    use HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
 
     /**
      * Tell HasUuids to populate `uuid`, not the `id` primary key — `id`

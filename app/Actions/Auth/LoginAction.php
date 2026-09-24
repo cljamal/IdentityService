@@ -36,6 +36,6 @@ final readonly class LoginAction
 
         $user = $strategy->authenticate($data);
 
-        return IdApiGuard::current()->login($user);
+        return IdApiGuard::current()->loginWithRefreshToken($user);
     }
 }
