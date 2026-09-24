@@ -42,6 +42,7 @@ class PhoneChangeCoordinatorTest extends TestCase
 
         $identity = new AuthProvider(['identifier' => '998901234567']);
 
+        /** @var AuthProviderRepositoryInterface&MockInterface $providers */
         $providers = Mockery::mock(AuthProviderRepositoryInterface::class);
         $providers->shouldReceive('findByUser')
             ->with(AuthProviderName::PhoneOtp, $user)
@@ -81,9 +82,11 @@ class PhoneChangeCoordinatorTest extends TestCase
 
         $identity = new AuthProvider(['identifier' => '998901234567']);
 
+        /** @var AuthProviderRepositoryInterface&MockInterface $providers */
         $providers = Mockery::mock(AuthProviderRepositoryInterface::class);
         $providers->shouldReceive('findByUser')->andReturn($identity);
 
+        /** @var IdentityChangeLogRepositoryInterface&MockInterface $history */
         $history = Mockery::mock(IdentityChangeLogRepositoryInterface::class);
 
         $otp = new FakeOtpRepository;

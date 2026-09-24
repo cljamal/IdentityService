@@ -18,7 +18,7 @@ body:json {
 }
 
 script:post-response {
-  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+  if (res.status === 200 && res.body && res.body.data.access_token) {
     bru.setEnvVar("phoneToken", res.body.data.access_token);
     bru.setEnvVar("token", res.body.data.access_token);
   }
