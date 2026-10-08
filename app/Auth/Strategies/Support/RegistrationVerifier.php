@@ -12,6 +12,7 @@ use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
+use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
@@ -38,7 +39,7 @@ final readonly class RegistrationVerifier
     /**
      * @throws OtpThrottledException
      */
-    public function send(AuthProviderName $provider, string $identifier, OtpDestination $destination): void
+    public function send(AuthProviderName $provider, string $identifier, OtpDestination $destination, ?SmsTemplate $sms = null): void
     {
         $subject = $this->subject($provider, $identifier);
 
@@ -49,7 +50,7 @@ final readonly class RegistrationVerifier
         $code = $this->generateCode();
         $this->otp->put($subject, $code);
 
-        OtpCodeIssued::dispatch($destination, $code, OtpPurpose::Registration);
+        OtpCodeIssued::dispatch($destination, $code, OtpPurpose::Registration, $sms);
     }
 
     /**

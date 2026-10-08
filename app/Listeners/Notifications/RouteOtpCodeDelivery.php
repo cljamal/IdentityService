@@ -16,6 +16,6 @@ final class RouteOtpCodeDelivery
     public function handle(OtpCodeIssued $event): void
     {
         OtpCodeBroadcast::dispatch($event->destination, $event->purpose);
-        OtpCodeDeliveryRequested::dispatch($event->destination, $event->code, $event->purpose);
+        OtpCodeDeliveryRequested::dispatch($event->destination, $event->code, $event->purpose, $event->sms);
     }
 }

@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Notifications\Otp\OtpChannel;
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
+use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Illuminate\Validation\Rule;
@@ -70,7 +71,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     /**
      * @param  array<string, mixed>  $data
      */
-    public function sendCode(array $data): void
+    public function sendCode(array $data, ?SmsTemplate $sms = null): void
     {
         $phone = $data['phone'];
         $subject = $this->subject($phone);
@@ -83,7 +84,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
 
         $this->otp->put($subject, $code);
 
-        OtpCodeIssued::dispatch(new OtpDestination(OtpChannel::Phone, $phone), $code, OtpPurpose::Login);
+        OtpCodeIssued::dispatch(new OtpDestination(OtpChannel::Phone, $phone), $code, OtpPurpose::Login, $sms);
     }
 
     /**
@@ -151,9 +152,9 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     /**
      * @param  array<string, mixed>  $data
      */
-    public function requestChange(User $user, array $data): void
+    public function requestChange(User $user, array $data, ?SmsTemplate $sms = null): void
     {
-        $this->phoneChange->requestChange($user, $data['new_phone']);
+        $this->phoneChange->requestChange($user, $data['new_phone'], $sms);
     }
 
     /**
@@ -167,9 +168,9 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     /**
      * @param  array<string, mixed>  $data
      */
-    public function confirmOld(User $user, array $data): void
+    public function confirmOld(User $user, array $data, ?SmsTemplate $sms = null): void
     {
-        $this->phoneChange->confirmOld($user, $data['code']);
+        $this->phoneChange->confirmOld($user, $data['code'], $sms);
     }
 
     /**
@@ -188,7 +189,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
         $this->phoneChange->confirmNew($user, $data['code']);
     }
 
-    public function requestDeletion(User $user): void
+    public function requestDeletion(User $user, ?SmsTemplate $sms = null): void
     {
         $identity = $this->providers->findByUser(AuthProviderName::PhoneOtp, $user);
 
@@ -200,6 +201,7 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
             AuthProviderName::PhoneOtp,
             $user,
             new OtpDestination(OtpChannel::Phone, $identity->identifier),
+            $sms,
         );
     }
 

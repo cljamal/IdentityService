@@ -10,6 +10,7 @@ use App\Auth\Strategies\Support\CodeBasedPasswordReset;
 use App\Auth\Strategies\Support\RegistrationVerifier;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Models\User;
+use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 
@@ -62,7 +63,7 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
      * resolve a rescue contact for the freshly created user; otherwise
      * there's nothing to prove ownership of, so auto-verify.
      */
-    protected function beginVerification(User $user, string $identifier): bool
+    protected function beginVerification(User $user, string $identifier, ?SmsTemplate $sms = null): bool
     {
         $destination = $this->rescue->resolve($user);
 
@@ -72,7 +73,7 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
             return true;
         }
 
-        $this->verification->send($this->provider(), $identifier, $destination);
+        $this->verification->send($this->provider(), $identifier, $destination, $sms);
 
         return false;
     }
@@ -88,7 +89,7 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
     /**
      * @param  array<string, mixed>  $data
      */
-    public function requestPasswordReset(array $data): void
+    public function requestPasswordReset(array $data, ?SmsTemplate $sms = null): void
     {
         $username = $data['username'];
         $identity = $this->providers->findByIdentifier($this->provider(), $username);
@@ -100,7 +101,7 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
         // "existence vs delivery", что и у email-password.
         $destination = $identity?->user ? $this->rescue->resolve($identity->user) : null;
 
-        $this->reset->request($this->provider(), $username, $destination);
+        $this->reset->request($this->provider(), $username, $destination, $sms);
     }
 
     /**

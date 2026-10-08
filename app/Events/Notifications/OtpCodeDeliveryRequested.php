@@ -4,6 +4,7 @@ namespace App\Events\Notifications;
 
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
+use App\Notifications\Otp\SmsTemplate;
 use Illuminate\Foundation\Events\Dispatchable;
 
 /**
@@ -20,5 +21,6 @@ final readonly class OtpCodeDeliveryRequested
         public OtpDestination $destination,
         public string $code,
         public OtpPurpose $purpose,
+        public ?SmsTemplate $sms = null,
     ) {}
 }

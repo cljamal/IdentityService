@@ -2,6 +2,7 @@
 
 namespace App\Listeners\Notifications;
 
+use App\Actions\Auth\RenderOtpSmsAction;
 use App\Events\Notifications\OtpCodeDeliveryRequested;
 use App\Notifications\Otp\EmailNotifier;
 use App\Notifications\Otp\OtpChannel;
@@ -23,7 +24,7 @@ final readonly class DeliverOtpCode
     public function handle(OtpCodeDeliveryRequested $event): void
     {
         match ($event->destination->channel) {
-            OtpChannel::Phone => $this->sms->notify($event->destination->contact, $event->code, $event->purpose),
+            OtpChannel::Phone => $this->sms->notify($event->destination->contact, RenderOtpSmsAction::run($event->code, $event->sms), $event->purpose),
             OtpChannel::Email => $this->email->notify($event->destination->contact, $event->code, $event->purpose),
         };
     }

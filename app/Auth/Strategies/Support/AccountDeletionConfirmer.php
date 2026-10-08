@@ -9,6 +9,7 @@ use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
+use App\Notifications\Otp\SmsTemplate;
 
 /**
  * Request/confirm mechanics for proving the account holder still controls
@@ -22,11 +23,11 @@ final readonly class AccountDeletionConfirmer
     /**
      * @throws OtpThrottledException
      */
-    public function request(AuthProviderName $provider, User $user, OtpDestination $destination): void
+    public function request(AuthProviderName $provider, User $user, OtpDestination $destination, ?SmsTemplate $sms = null): void
     {
         $code = $this->challenge->request($this->subject($provider, $user));
 
-        OtpCodeIssued::dispatch($destination, $code, OtpPurpose::AccountDeletion);
+        OtpCodeIssued::dispatch($destination, $code, OtpPurpose::AccountDeletion, $sms);
     }
 
     /**

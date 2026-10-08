@@ -13,6 +13,7 @@ use App\Auth\Strategies\Support\RegistrationVerifier;
 use App\Exceptions\Auth\IdentityNotVerifiedException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Models\User;
+use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
@@ -104,7 +105,7 @@ abstract readonly class PasswordStrategy implements AuthStrategy, ChangesPasswor
     /**
      * @param  array<string, mixed>  $data
      */
-    public function register(array $data): RegistrationResult
+    public function register(array $data, ?SmsTemplate $sms = null): RegistrationResult
     {
         $identifier = $data[$this->identifierField()];
 
@@ -114,7 +115,7 @@ abstract readonly class PasswordStrategy implements AuthStrategy, ChangesPasswor
             ['password' => Hash::make($data['password'])],
         );
 
-        $verified = $this->beginVerification($user, $identifier);
+        $verified = $this->beginVerification($user, $identifier, $sms);
 
         return new RegistrationResult($user, $verified);
     }
@@ -126,7 +127,7 @@ abstract readonly class PasswordStrategy implements AuthStrategy, ChangesPasswor
      *
      * @return bool Whether the identity ended up verified immediately.
      */
-    protected function beginVerification(User $user, string $identifier): bool
+    protected function beginVerification(User $user, string $identifier, ?SmsTemplate $sms = null): bool
     {
         $this->providers->markVerified($this->provider(), $user);
 

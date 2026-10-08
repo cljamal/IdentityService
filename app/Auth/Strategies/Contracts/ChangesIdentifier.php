@@ -3,6 +3,7 @@
 namespace App\Auth\Strategies\Contracts;
 
 use App\Models\User;
+use App\Notifications\Otp\SmsTemplate;
 
 /**
  * Additional contract for strategies that support changing their
@@ -20,7 +21,7 @@ interface ChangesIdentifier
     /**
      * @param  array<string, mixed>  $data
      */
-    public function requestChange(User $user, array $data): void;
+    public function requestChange(User $user, array $data, ?SmsTemplate $sms = null): void;
 
     /**
      * @return array<string, mixed>
@@ -30,7 +31,7 @@ interface ChangesIdentifier
     /**
      * @param  array<string, mixed>  $data
      */
-    public function confirmOld(User $user, array $data): void;
+    public function confirmOld(User $user, array $data, ?SmsTemplate $sms = null): void;
 
     /**
      * @return array<string, mixed>

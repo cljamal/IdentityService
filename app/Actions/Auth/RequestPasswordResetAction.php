@@ -7,6 +7,7 @@ use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
+use App\Notifications\Otp\SmsTemplate;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -33,6 +34,6 @@ final readonly class RequestPasswordResetAction
 
         Validator::make($data, $strategy->passwordResetRequestRules())->validate();
 
-        $strategy->requestPasswordReset($data);
+        $strategy->requestPasswordReset($data, SmsTemplate::fromInput($data));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Auth\Strategies\Contracts;
 
 use App\Auth\Strategies\Support\RegistrationResult;
 use App\Models\User;
+use App\Notifications\Otp\SmsTemplate;
 
 /**
  * Additional contract for strategies where possession of the credential
@@ -23,7 +24,7 @@ interface RegistersIdentity
     /**
      * @param  array<string, mixed>  $data
      */
-    public function register(array $data): RegistrationResult;
+    public function register(array $data, ?SmsTemplate $sms = null): RegistrationResult;
 
     /**
      * Validation rules for confirming the code sent after register().

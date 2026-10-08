@@ -9,6 +9,7 @@ use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
+use App\Notifications\Otp\SmsTemplate;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -37,6 +38,6 @@ final readonly class SendVerificationCodeAction
 
         Validator::make($data, $strategy->codeRules())->validate();
 
-        $strategy->sendCode($data);
+        $strategy->sendCode($data, SmsTemplate::fromInput($data));
     }
 }

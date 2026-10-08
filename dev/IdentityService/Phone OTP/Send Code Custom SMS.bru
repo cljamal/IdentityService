@@ -1,0 +1,41 @@
+meta {
+  name: Send Code Custom SMS
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/auth/phone-otp/otp
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "phone": "{{phone}}",
+    "sms": {
+      "template": "Добро пожаловать в {{service_name}}! Ваш код {{code}}. Не передавайте его никому.",
+      "data": {
+        "service_name": "Мой сервис"
+      }
+    }
+  }
+}
+
+script:pre-request {
+  if (bru.getVar("code") !== undefined || bru.getVar("service_name") !== undefined) {
+    throw new Error("Не задавайте переменные Bruno code и service_name: это подстановки IdentityService.");
+  }
+}
+
+docs {
+  Альтернатива Send Code с текстом от подключённого сервиса, затем выполните Login.
+  Между запросами выдачи OTP выдерживайте cooldown 60 секунд.
+  code и service_name внутри template — подстановки IdentityService.
+  Не создавайте одноимённые переменные Bruno; код генерирует сервер,
+  а название берётся из sms.data.service_name.
+  SMS пока записывается в лог. Обычный Send Code проверяет текст по умолчанию.
+  Такой же блок sms принимается в остальных запросах выдачи OTP.
+  При смене телефона задавайте его отдельно для старого и нового номера.
+  Некорректный блок sms возвращает 422; для fallback полностью удалите блок.
+}

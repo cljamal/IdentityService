@@ -3,6 +3,7 @@
 namespace App\Auth\Strategies\Contracts;
 
 use App\Models\User;
+use App\Notifications\Otp\SmsTemplate;
 
 /**
  * Additional contract for password-based providers that can reset a
@@ -25,7 +26,7 @@ interface ResetsPassword
     /**
      * @param  array<string, mixed>  $data
      */
-    public function requestPasswordReset(array $data): void;
+    public function requestPasswordReset(array $data, ?SmsTemplate $sms = null): void;
 
     /**
      * @return array<string, mixed>

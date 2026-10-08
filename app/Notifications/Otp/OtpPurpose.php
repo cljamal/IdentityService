@@ -3,10 +3,8 @@
 namespace App\Notifications\Otp;
 
 /**
- * Why a code was issued — carried all the way to the notifier so the
- * actual message text ("your login code" vs "confirm account deletion")
- * can be chosen without the calling code (RegistrationVerifier,
- * PhoneChangeCoordinator, ...) knowing anything about delivery.
+ * Identifies the operation throughout delivery and monitoring.
+ * SMS text is rendered separately before reaching the notifier.
  */
 enum OtpPurpose: string
 {

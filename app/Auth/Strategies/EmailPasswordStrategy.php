@@ -14,6 +14,7 @@ use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Models\User;
 use App\Notifications\Otp\OtpChannel;
 use App\Notifications\Otp\OtpDestination;
+use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Support\Str;
@@ -82,9 +83,9 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
     /**
      * Email always has a channel — the address itself.
      */
-    protected function beginVerification(User $user, string $identifier): bool
+    protected function beginVerification(User $user, string $identifier, ?SmsTemplate $sms = null): bool
     {
-        $this->verification->send($this->provider(), $identifier, new OtpDestination(OtpChannel::Email, $identifier));
+        $this->verification->send($this->provider(), $identifier, new OtpDestination(OtpChannel::Email, $identifier), $sms);
 
         return false;
     }
@@ -100,13 +101,13 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
     /**
      * @param  array<string, mixed>  $data
      */
-    public function requestPasswordReset(array $data): void
+    public function requestPasswordReset(array $data, ?SmsTemplate $sms = null): void
     {
         $email = $data['email'];
         $identity = $this->providers->findByIdentifier($this->provider(), $email);
 
         // Канал доставки для email-password — сам identifier.
-        $this->reset->request($this->provider(), $email, $identity ? new OtpDestination(OtpChannel::Email, $email) : null);
+        $this->reset->request($this->provider(), $email, $identity ? new OtpDestination(OtpChannel::Email, $email) : null, $sms);
     }
 
     /**
@@ -129,7 +130,7 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
         return $this->reset->confirm($this->provider(), $data['email'], $data['code'], $data['password']);
     }
 
-    public function requestDeletion(User $user): void
+    public function requestDeletion(User $user, ?SmsTemplate $sms = null): void
     {
         $identity = $this->providers->findByUser($this->provider(), $user);
 
@@ -137,7 +138,7 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
             throw new NoLinkedIdentityException($this->provider()->value);
         }
 
-        $this->deletion->request($this->provider(), $user, new OtpDestination(OtpChannel::Email, $identity->identifier));
+        $this->deletion->request($this->provider(), $user, new OtpDestination(OtpChannel::Email, $identity->identifier), $sms);
     }
 
     /**

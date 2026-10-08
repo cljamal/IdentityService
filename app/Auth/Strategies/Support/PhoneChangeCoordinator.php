@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\Otp\OtpChannel;
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
+use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
@@ -37,7 +38,7 @@ final readonly class PhoneChangeCoordinator
      * @throws NoLinkedIdentityException
      * @throws OtpThrottledException
      */
-    public function requestChange(User $user, string $newPhone): void
+    public function requestChange(User $user, string $newPhone, ?SmsTemplate $sms = null): void
     {
         $identity = $this->providers->findByUser(AuthProviderName::PhoneOtp, $user);
 
@@ -52,6 +53,7 @@ final readonly class PhoneChangeCoordinator
             new OtpDestination(OtpChannel::Phone, $identity->identifier),
             $code,
             OtpPurpose::IdentifierChangeOld,
+            $sms,
         );
     }
 
@@ -59,7 +61,7 @@ final readonly class PhoneChangeCoordinator
      * @throws InvalidOtpException
      * @throws OtpThrottledException
      */
-    public function confirmOld(User $user, string $code): void
+    public function confirmOld(User $user, string $code, ?SmsTemplate $sms = null): void
     {
         $this->challenge->verify($this->oldSubject($user), $code);
 
@@ -83,6 +85,7 @@ final readonly class PhoneChangeCoordinator
             new OtpDestination(OtpChannel::Phone, $newPhone),
             $newCode,
             OtpPurpose::IdentifierChangeNew,
+            $sms,
         );
     }
 

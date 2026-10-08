@@ -11,6 +11,7 @@ use App\Auth\TokenPair;
 use App\Events\Ops\UserRegistered;
 use App\Exceptions\Auth\AuthProviderDisabledException;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
+use App\Notifications\Otp\SmsTemplate;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -42,7 +43,7 @@ final readonly class RegisterAction
 
         Validator::make($data, $strategy->registrationRules())->validate();
 
-        $result = $strategy->register($data);
+        $result = $strategy->register($data, SmsTemplate::fromInput($data));
 
         if (! $result->verified) {
             return null;

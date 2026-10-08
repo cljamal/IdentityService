@@ -27,6 +27,12 @@ docs {
   Change Password использует актуальную переменную emailPassword/usernamePassword.
   Phone OTP: Send Code → Login; смена номера — Request Identifier Change →
   Confirm Old Identifier → Confirm New Identifier.
+  Send Code Custom SMS — альтернативная выдача OTP с текстом и данными от сервиса.
+  sms можно добавить в register, password/forgot, identifier/change,
+  identifier/change/confirm-old и account/delete; используется при доставке на телефон.
+  Для каждого запроса выдачи кодов передавайте sms заново; без него текст стандартный.
+  В sms.template code подставляет IdentityService, остальные значения берутся из sms.data.
+  Не задавайте в Bruno переменные code/service_name из примера: оставьте их серверу.
   Удаление: Request Account Deletion → Confirm Account Deletion; затем нужен новый вход.
   
   Session: Refresh Token → List Sessions; sessionId задайте вручную из списка.

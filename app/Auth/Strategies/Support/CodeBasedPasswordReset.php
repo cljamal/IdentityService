@@ -12,6 +12,7 @@ use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
+use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
@@ -37,7 +38,7 @@ final readonly class CodeBasedPasswordReset
     /**
      * @throws OtpThrottledException
      */
-    public function request(AuthProviderName $provider, string $identifier, ?OtpDestination $destination): void
+    public function request(AuthProviderName $provider, string $identifier, ?OtpDestination $destination, ?SmsTemplate $sms = null): void
     {
         $subject = $this->subject($provider, $identifier);
 
@@ -52,7 +53,7 @@ final readonly class CodeBasedPasswordReset
         $this->otp->put($subject, $code);
 
         if ($destination !== null) {
-            OtpCodeIssued::dispatch($destination, $code, OtpPurpose::PasswordReset);
+            OtpCodeIssued::dispatch($destination, $code, OtpPurpose::PasswordReset, $sms);
         }
     }
 

@@ -14,9 +14,9 @@ final class AccountController extends Controller
     /**
      * Request account deletion: sends a confirmation code via the given provider's channel.
      */
-    public function requestDeletion(AuthProviderName $provider): MessageResource
+    public function requestDeletion(AuthProviderName $provider, Request $request): MessageResource
     {
-        RequestAccountDeletionAction::run($provider, IdApiGuard::current()->user());
+        RequestAccountDeletionAction::run($provider, IdApiGuard::current()->user(), $request->all());
 
         return MessageResource::make('Код подтверждения удаления отправлен.');
     }

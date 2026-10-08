@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Log;
  */
 final class LoggingSmsNotifier implements SmsNotifier
 {
-    public function notify(string $phone, string $code, OtpPurpose $purpose): void
+    public function notify(string $phone, string $message, OtpPurpose $purpose): void
     {
-        Log::info("[sms:{$purpose->value}] {$phone}: {$code}");
+        Log::info("[sms:{$purpose->value}] {$phone}: {$message}");
     }
 }

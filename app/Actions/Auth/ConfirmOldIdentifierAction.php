@@ -8,6 +8,7 @@ use App\Auth\Strategies\Contracts\ChangesIdentifier;
 use App\Auth\Strategies\Contracts\NormalizesInput;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
 use App\Models\User;
+use App\Notifications\Otp\SmsTemplate;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -34,6 +35,6 @@ final readonly class ConfirmOldIdentifierAction
 
         Validator::make($data, $strategy->confirmOldRules())->validate();
 
-        $strategy->confirmOld($user, $data);
+        $strategy->confirmOld($user, $data, SmsTemplate::fromInput($data));
     }
 }
