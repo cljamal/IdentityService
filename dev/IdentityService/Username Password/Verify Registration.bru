@@ -12,19 +12,20 @@ post {
 
 body:json {
   {
-    "username": "john_doe",
-    "code": "1111"
+    "username": "{{username}}",
+    "code": "{{otpCode}}"
   }
 }
 
 script:post-response {
   if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
-    bru.setEnvVar("usernameToken", res.body.data.access_token);
-    bru.setEnvVar("token", res.body.data.access_token);
-    bru.setEnvVar("refreshToken", res.body.data.refresh_token);
+    bru.setVar("usernameToken", res.body.data.access_token);
+    bru.setVar("token", res.body.data.access_token);
+    bru.setVar("refreshToken", res.body.data.refresh_token);
   }
 }
 
 docs {
-  Нужен, только если Register вернул "проверьте код" (т.е. rescue-контакт настроен).
+  Выполняйте только если Register вернул сообщение о подтверждении, а не токены.
+  Это означает, что resolver нашёл rescue-контакт. Без него шаг пропускается.
 }

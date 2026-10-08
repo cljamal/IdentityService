@@ -16,10 +16,16 @@ auth:bearer {
 
 body:json {
   {
-    "code": "1111"
+    "code": "{{otpCode}}"
   }
 }
 
 docs {
   Шаг 3 из 3: номер телефона фактически меняется на новый.
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("phone", bru.getEnvVar("newPhone"));
+  }
 }

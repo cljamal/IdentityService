@@ -1,0 +1,33 @@
+meta {
+  name: OTP Channel Auth
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/broadcasting/auth
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "socket_id": "{{socketId}}",
+    "channel_name": "private-otp-deliveries"
+  }
+}
+
+script:pre-request {
+  if (!bru.getEnvVar("socketId")) {
+    throw new Error("Укажите socketId реального WebSocket-соединения.");
+  }
+}
+
+docs {
+  Авторизация пользователя JWT для мониторинга OTP. Raw OTP в событии отсутствует.
+  При log-драйвере реального WebSocket-транспорта и его подписи нет.
+}

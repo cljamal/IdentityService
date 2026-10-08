@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 /**
  * The secret half of a client's credentials (see AuthenticateClient) —
  * structurally identical to RefreshToken: only the SHA-256 hash is ever
- * persisted, the plaintext is shown to the operator once, at creation time.
+ * persisted, the plaintext is shown once when generated or rotated.
  */
 final readonly class ClientSecret
 {

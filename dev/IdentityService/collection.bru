@@ -1,0 +1,40 @@
+headers {
+  Accept: application/json
+  Content-Type: application/json
+  X-Client-Id: {{clientId}}
+  X-Client-Secret: {{clientSecret}}
+}
+
+docs {
+  Выберите Local, заполните clientId и секретную переменную clientSecret.
+  baseUrl уже включает /api. Секрет клиента предназначен только для Шлюза/Bruno.
+  
+  Запросы запускаются вручную по выбранному сценарию, а не вся коллекция подряд.
+  Она содержит смену пароля, отзыв сессий и удаление аккаунта.
+  Verify Registration выполняется только после ответа о необходимости подтверждения.
+  Перед подтверждениями вне APP_ENV=local обновляйте otpCode кодом из доставки/лога.
+  В local код 1111; TTL 90 секунд, resend cooldown 60 секунд.
+  
+  Вход/подтверждение/сброс сохраняют token и refreshToken в runtime-переменные,
+  а также phoneToken, emailToken или usernameToken. Общие запросы Session/Dev
+  используют последнюю выданную пару. После перезапуска Bruno выполните вход заново.
+  Refresh синхронизирует соответствующий токен провайдера; старый JWT уже недействителен.
+  Скрипты не сохраняют полученные токены в файлы окружения.
+  
+  Email Password: Register → Verify Registration → Login.
+  Username Password: Register → Verify Registration при необходимости → Login.
+  Восстановление: Forgot Password → Reset Password; старые сессии отзываются.
+  Change Password использует актуальную переменную emailPassword/usernamePassword.
+  Phone OTP: Send Code → Login; смена номера — Request Identifier Change →
+  Confirm Old Identifier → Confirm New Identifier.
+  Удаление: Request Account Deletion → Confirm Account Deletion; затем нужен новый вход.
+  
+  Session: Refresh Token → List Sessions; sessionId задайте вручную из списка.
+  Revoke Session и Logout — отдельные операции. Отзыв текущей сессии делает Logout
+  с тем же токеном невозможным. Повторный refresh старым токеном отзывает сессию.
+  
+  Broadcasting: socketId берётся из реального WS-соединения. С BROADCAST_CONNECTION=log
+  запросы демонстрируют авторизацию, но не подключают WebSocket и не возвращают
+  подпись реального транспорта. Для OTP-канала пока допускается любой
+  авторизованный пользователь; перед реальным транспортом политику нужно сузить.
+}

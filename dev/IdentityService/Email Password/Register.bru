@@ -12,12 +12,18 @@ post {
 
 body:json {
   {
-    "email": "user@example.com",
-    "password": "password123",
-    "password_confirmation": "password123"
+    "email": "{{email}}",
+    "password": "{{initialPassword}}",
+    "password_confirmation": "{{initialPassword}}"
   }
 }
 
 docs {
   Email всегда требует подтверждения кодом (см. Verify Registration) — токен сразу не выдаётся.
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("emailPassword", bru.getEnvVar("initialPassword"));
+  }
 }

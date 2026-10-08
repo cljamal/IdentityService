@@ -15,8 +15,6 @@ auth:bearer {
 }
 
 docs {
-  Дев-эндпоинт: раскодированный JWT текущего запроса (claims + читаемые
-  issued_at/expires_at/age_seconds/expires_in_seconds) плюс краткая info
-  о пользователе. Регистрируется везде, кроме APP_ENV=production
-  (см. routes/api.php) — там вернёт 404.
+  Показывает декодированный JWT и читаемые даты. Маршрут зарегистрирован всегда;
+  контроллер возвращает 404 при APP_ENV=production. Нужны credentials клиента и JWT.
 }

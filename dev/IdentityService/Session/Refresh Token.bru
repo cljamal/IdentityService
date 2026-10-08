@@ -1,7 +1,7 @@
 meta {
   name: Refresh Token
   type: http
-  seq: 2
+  seq: 1
 }
 
 post {
@@ -17,15 +17,25 @@ body:json {
 }
 
 script:post-response {
-  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
-    bru.setEnvVar("token", res.body.data.access_token);
-    bru.setEnvVar("refreshToken", res.body.data.refresh_token);
+  const tokens = res.body && res.body.data;
+  if (res.status === 200 && tokens && tokens.access_token && tokens.refresh_token) {
+    const previousToken = bru.getVar("token") || bru.getEnvVar("token");
+    for (const name of ["phoneToken", "emailToken", "usernameToken"]) {
+      const providerToken = bru.getVar(name) || bru.getEnvVar(name);
+      if (previousToken && providerToken === previousToken) {
+        bru.setVar(name, tokens.access_token);
+      }
+    }
+    bru.setVar("token", tokens.access_token);
+    bru.setVar("refreshToken", tokens.refresh_token);
   }
 }
 
 docs {
-  Меняет refresh_token на новую пару access/refresh (общие переменные token/refreshToken,
-  не привязаны к провайдеру). Без Authorization — сам refresh_token и есть credential.
-  Старый refresh_token после этого больше не действует; повторное его предъявление
-  отзовёт всю сессию (см. REFRESH_TOKEN_REUSED).
+  Без пользовательского Authorization; credentials клиента обязательны.
+  Обновляет token/refreshToken и соответствующий токен провайдера.
+  Предыдущий access token перестаёт работать. Повтор последнего использованного
+  refresh token отзывает сессию с REFRESH_TOKEN_REUSED. Хранится один предыдущий хеш.
+  Проигравший конкурентную атомарную ротацию получает INVALID_REFRESH_TOKEN
+  без отзыва сессии победителя.
 }

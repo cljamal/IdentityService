@@ -1,0 +1,29 @@
+meta {
+  name: Client Channel Auth
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/broadcasting/client-auth
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "socket_id": "{{socketId}}",
+    "channel_name": "private-client.{{clientId}}"
+  }
+}
+
+script:pre-request {
+  if (!bru.getEnvVar("socketId")) {
+    throw new Error("Укажите socketId реального WebSocket-соединения.");
+  }
+}
+
+docs {
+  Авторизация Шлюза credentials клиента, без JWT. Разрешён только свой private-client канал.
+  При log-драйвере реального WebSocket-транспорта и его подписи нет.
+}

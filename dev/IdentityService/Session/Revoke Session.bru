@@ -1,11 +1,11 @@
 meta {
   name: Revoke Session
   type: http
-  seq: 4
+  seq: 3
 }
 
 delete {
-  url: {{baseUrl}}/auth/sessions/1
+  url: {{baseUrl}}/auth/sessions/{{sessionId}}
   body: none
   auth: bearer
 }
@@ -15,7 +15,13 @@ auth:bearer {
 }
 
 docs {
-  Отзывает конкретную сессию по id (взять из ответа List Sessions — замените
-  "1" в URL). Отзыв чужой или несуществующей сессии, как и сессии другого
-  пользователя, отвечает одинаковым 404 (id не палит существование).
+  Задайте sessionId из ответа List Sessions; ID не выбирается автоматически.
+  Чужая, несуществующая или отозванная сессия возвращает 404 SESSION_NOT_FOUND.
+  После отзыва текущей сессии её access/refresh tokens больше не действуют.
+}
+
+script:pre-request {
+  if (!bru.getEnvVar("sessionId")) {
+    throw new Error("Укажите sessionId из List Sessions.");
+  }
 }

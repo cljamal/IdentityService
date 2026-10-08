@@ -12,22 +12,25 @@ post {
 
 body:json {
   {
-    "username": "john_doe",
-    "password": "password123",
-    "password_confirmation": "password123"
+    "username": "{{username}}",
+    "password": "{{initialPassword}}",
+    "password_confirmation": "{{initialPassword}}"
   }
 }
 
 script:post-response {
+  if (res.status === 200) {
+    bru.setVar("usernamePassword", bru.getEnvVar("initialPassword"));
+  }
   if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
-    bru.setEnvVar("usernameToken", res.body.data.access_token);
-    bru.setEnvVar("token", res.body.data.access_token);
-    bru.setEnvVar("refreshToken", res.body.data.refresh_token);
+    bru.setVar("usernameToken", res.body.data.access_token);
+    bru.setVar("token", res.body.data.access_token);
+    bru.setVar("refreshToken", res.body.data.refresh_token);
   }
 }
 
 docs {
-  У "username" нет своего канала доставки: если rescue-контакт не настроен
-  (config/identity.php: username_password_rescue.table), identity верифицируется
-  сразу и ответ будет с access_token, а не с "проверьте код".
+  Без найденного rescue-контакта identity подтверждается сразу и возвращаются токены.
+  При наличии контакта требуется Verify Registration. Таблица — дополнительный
+  источник; сначала resolver проверяет подтверждённые identities пользователя.
 }

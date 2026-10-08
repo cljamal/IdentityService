@@ -12,16 +12,16 @@ post {
 
 body:json {
   {
-    "phone": "998901234567",
-    "code": "1111"
+    "phone": "{{phone}}",
+    "code": "{{otpCode}}"
   }
 }
 
 script:post-response {
-  if (res.status === 200 && res.body && res.body.data.access_token) {
-    bru.setEnvVar("phoneToken", res.body.data.access_token);
-    bru.setEnvVar("token", res.body.data.access_token);
-    bru.setEnvVar("refreshToken", res.body.data.refresh_token);
+  if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
+    bru.setVar("phoneToken", res.body.data.access_token);
+    bru.setVar("token", res.body.data.access_token);
+    bru.setVar("refreshToken", res.body.data.refresh_token);
   }
 }
 

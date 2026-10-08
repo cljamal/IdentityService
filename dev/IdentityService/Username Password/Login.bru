@@ -12,15 +12,15 @@ post {
 
 body:json {
   {
-    "username": "john_doe",
-    "password": "password123"
+    "username": "{{username}}",
+    "password": "{{usernamePassword}}"
   }
 }
 
 script:post-response {
   if (res.status === 200 && res.body && res.body.data && res.body.data.access_token) {
-    bru.setEnvVar("usernameToken", res.body.data.access_token);
-    bru.setEnvVar("token", res.body.data.access_token);
-    bru.setEnvVar("refreshToken", res.body.data.refresh_token);
+    bru.setVar("usernameToken", res.body.data.access_token);
+    bru.setVar("token", res.body.data.access_token);
+    bru.setVar("refreshToken", res.body.data.refresh_token);
   }
 }
