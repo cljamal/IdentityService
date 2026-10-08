@@ -29,3 +29,55 @@ docs {
   Логин по phone-otp автоматически создаёт пользователя, если такого номера ещё нет
   (firstOrCreateUser). Сохраняет токен в phoneToken/token для остальных запросов.
 }
+
+example {
+  name: 200
+  
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "phone": "{{phone}}",
+        "code": "{{otpCode}}"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      access-control-allow-origin: *
+      cache-control: no-cache, private
+      content-type: application/json
+      date: Thu, 08 Oct 2026 06:45:45 GMT
+      server: nginx
+      vary: Accept-Encoding
+      x-content-type-options: nosniff
+      x-frame-options: SAMEORIGIN
+      x-ratelimit-limit: 10
+      x-ratelimit-remaining: 8
+      transfer-encoding: chunked
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": {
+            "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJpc3MiOiJodHRwOi8vaWQtZ2F0ZXdheS5qYW0vYXBpL2F1dGgvcGhvbmUtb3RwL2xvZ2luIiwiaWF0IjoxNzkxNDQxOTQ1LCJleHAiOjE3OTE0NDU1NDUsIm5iZiI6MTc5MTQ0MTk0NSwianRpIjoiR2w1TDZpUG4wYkQ1OTBjZSIsInN1YiI6IjAxYTExYTQyLWMxNDgtNzI0NC1hNzljLTI0MTE4MTFlM2ExNCIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjciLCJyb2xlIjoidXNlciIsImNsaWVudF9pZCI6IjRvVUlRYlJybnNyVjRQSWdDZ2NzWG5WcHRlWEJrY0tHIn0.By0jGhNPQ18HtdMnHMI9e0omtcC7bqjv8FyTK0UXVwMSgyyFWePnmx5lNB68rs1fx10vRggs9gtLv6bcOjwbmJ1stWGm_R1OGJd198MvDD8YSMe5pBISPo2CA88uH5qbId8b6TCLlchZAqrIn8yBCIJ8SU82zW34WAYks1kHZSkHMU5KSMmoJTot_KMMk4ZNbWNvbNVhYVidvIjXygPbar1wXwQRYG0yb8-06lQ9vJFTvN2S7pEW4WPMiLG2xFlAtUp_Ap-0X9XBYydUfOPKQBZ5ysaiafmAuAk3l4yxVl82KZoVznXkZwnITgsZfC7z_NJw4fsAQ1YKIM4w7dld6Zi5vJgdeJuvHWcg5w9JcX3bAaiO4ZCWpSZy-mU5BaDwx6kgYHOI_eTAaq-dW0kA8y1hSqxa9pnCQKKNaPF1sOtpajdRc1p9_qbcvdct7hLqmqtBr3TAo48FD7R50B7ZNfvi5r-judfW9-QApDpKKeDpK_F2uiTHN10TQybPwd8zog9gGlSZg9FsbQVjpd4kJicqtjPczq6esHuSih2_nERj6_UzPL0DSlKQKwEer1-to4AZXvAG9wf5-9lH-w05tzhuFVhLLsZdP8xjadXFwmpjAm-_gpRaPmxoIGynNc69VR80FW5PTf59eH3DgXzViJ2tLzDUpyBz7utGOxhNV_M",
+            "refresh_token": "ExXFyMl2hkDDxRWtqho1KyJsYjCJgJbJzeJsuDoKRTY7XJlhuRblFvgc5PT2idJk",
+            "token_type": "bearer",
+            "expires_in": 3600,
+            "refresh_expires_in": 1209600
+          }
+        }
+      '''
+    }
+  }
+}
