@@ -20,3 +20,50 @@ docs {
   Отправляет одноразовый код на телефон (лог, пока не подключён реальный SMS-шлюз).
   В local-окружении код всегда 1111.
 }
+
+example {
+  name: 200
+  
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/otp
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "phone": "{{phone}}"
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      access-control-allow-origin: *
+      cache-control: no-cache, private
+      content-type: application/json
+      date: Thu, 08 Oct 2026 06:45:37 GMT
+      server: nginx
+      vary: Accept-Encoding
+      x-content-type-options: nosniff
+      x-frame-options: SAMEORIGIN
+      x-ratelimit-limit: 5
+      x-ratelimit-remaining: 4
+      transfer-encoding: chunked
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "data": {
+            "message": "Код отправлен."
+          }
+        }
+      '''
+    }
+  }
+}

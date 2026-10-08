@@ -5,6 +5,10 @@ headers {
   X-Client-Secret: {{clientSecret}}
 }
 
+vars:pre-request {
+  service_name: iWon
+}
+
 docs {
   Выберите Local, заполните clientId и секретную переменную clientSecret.
   baseUrl уже включает /api. Секрет клиента предназначен только для Шлюза/Bruno.
