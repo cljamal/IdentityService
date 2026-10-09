@@ -39,3 +39,210 @@ docs {
   Проигравший конкурентную атомарную ротацию получает INVALID_REFRESH_TOKEN
   без отзыва сессии победителя.
 }
+
+example {
+  name: 200
+  description: Демонстрационный ответ; значения токенов и дат приведены для примера.
+
+  request: {
+    url: {{baseUrl}}/auth/refresh
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "refresh_token": "{{refreshToken}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 200
+      text: OK
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "data": {
+            "access_token": "<access-token>",
+            "refresh_token": "<refresh-token>",
+            "token_type": "bearer",
+            "expires_in": 3600,
+            "refresh_expires_in": 1209600
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 CLIENT_AUTHENTICATION_FAILED
+  description: Отсутствующие/неверные credentials или отключённый клиент.
+
+  request: {
+    url: {{baseUrl}}/auth/refresh
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: <invalid-client-secret>
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "refresh_token": "{{refreshToken}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "CLIENT_AUTHENTICATION_FAILED"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 429 HTTP_RATE_LIMIT
+  description: Ограничение частоты HTTP-запросов; отличается от OTP cooldown. APP_DEBUG=false.
+
+  request: {
+    url: {{baseUrl}}/auth/refresh
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "refresh_token": "{{refreshToken}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+      retry-after: 60
+    }
+    status: {
+      code: 429
+      text: Too Many Requests
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "Too Many Attempts."
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 INVALID_REFRESH_TOKEN
+  description: Демонстрационный ответ; значения токенов и дат приведены для примера.
+
+  request: {
+    url: {{baseUrl}}/auth/refresh
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "refresh_token": "<invalid-refresh-token>"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "INVALID_REFRESH_TOKEN"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 REFRESH_TOKEN_REUSED
+  description: Предыдущий refresh token предъявлен повторно; сессия отозвана.
+
+  request: {
+    url: {{baseUrl}}/auth/refresh
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "refresh_token": "<previous-refresh-token>"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "REFRESH_TOKEN_REUSED"
+        }
+      '''
+    }
+  }
+}

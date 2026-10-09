@@ -27,3 +27,121 @@ docs {
   Авторизация Шлюза credentials клиента, без JWT. Разрешён только свой private-client канал.
   При log-драйвере реального WebSocket-транспорта и его подписи нет.
 }
+
+example {
+  name: 200 Log driver
+  description: BROADCAST_CONNECTION=log; пустой ответ без WebSocket-подписи.
+
+  request: {
+    url: {{baseUrl}}/broadcasting/client-auth
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "socket_id": "{{socketId}}",
+        "channel_name": "private-client.{{clientId}}"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
+
+example {
+  name: 403 Канал другого клиента
+  description: Канал не принадлежит текущему клиенту; APP_DEBUG=false.
+
+  request: {
+    url: {{baseUrl}}/broadcasting/client-auth
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "socket_id": "{{socketId}}",
+        "channel_name": "private-client.other-client"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 403
+      text: Forbidden
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 CLIENT_AUTHENTICATION_FAILED
+  description: Отсутствующие/неверные credentials или отключённый клиент.
+
+  request: {
+    url: {{baseUrl}}/broadcasting/client-auth
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: <invalid-client-secret>
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "socket_id": "{{socketId}}",
+        "channel_name": "private-client.{{clientId}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "CLIENT_AUTHENTICATION_FAILED"
+        }
+      '''
+    }
+  }
+}

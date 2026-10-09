@@ -31,3 +31,78 @@ docs {
   Авторизация пользователя JWT для мониторинга OTP. Raw OTP в событии отсутствует.
   При log-драйвере реального WebSocket-транспорта и его подписи нет.
 }
+
+example {
+  name: 200 Log driver
+  description: BROADCAST_CONNECTION=log; пустой ответ без WebSocket-подписи.
+
+  request: {
+    url: {{baseUrl}}/broadcasting/auth
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: Bearer {{token}}
+    }
+    body:json: {
+      {
+        "socket_id": "{{socketId}}",
+        "channel_name": "private-otp-deliveries"
+      }
+    }
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+    body: {
+      type: text
+      content: '''
+
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 UNAUTHENTICATED
+  description: Отсутствующий, истёкший, отозванный или недействительный JWT.
+
+  request: {
+    url: {{baseUrl}}/broadcasting/auth
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      Content-Type: application/json
+      Authorization: Bearer <invalid-access-token>
+    }
+    body:json: {
+      {
+        "socket_id": "{{socketId}}",
+        "channel_name": "private-otp-deliveries"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "Unauthenticated."
+        }
+      '''
+    }
+  }
+}

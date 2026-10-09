@@ -32,11 +32,18 @@ docs {
 
 example {
   name: 200
-  
+  description: Демонстрационный ответ; значения токенов и дат приведены для примера.
+
   request: {
     url: {{baseUrl}}/auth/phone-otp/login
     method: POST
     mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
     body:json: {
       {
         "phone": "{{phone}}",
@@ -44,37 +51,276 @@ example {
       }
     }
   }
-  
+
   response: {
     headers: {
-      access-control-allow-origin: *
-      cache-control: no-cache, private
       content-type: application/json
-      date: Thu, 08 Oct 2026 06:45:45 GMT
-      server: nginx
-      vary: Accept-Encoding
-      x-content-type-options: nosniff
-      x-frame-options: SAMEORIGIN
-      x-ratelimit-limit: 10
-      x-ratelimit-remaining: 8
-      transfer-encoding: chunked
     }
-  
     status: {
       code: 200
       text: OK
     }
-  
     body: {
       type: json
       content: '''
         {
           "data": {
-            "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJpc3MiOiJodHRwOi8vaWQtZ2F0ZXdheS5qYW0vYXBpL2F1dGgvcGhvbmUtb3RwL2xvZ2luIiwiaWF0IjoxNzkxNDQxOTQ1LCJleHAiOjE3OTE0NDU1NDUsIm5iZiI6MTc5MTQ0MTk0NSwianRpIjoiR2w1TDZpUG4wYkQ1OTBjZSIsInN1YiI6IjAxYTExYTQyLWMxNDgtNzI0NC1hNzljLTI0MTE4MTFlM2ExNCIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjciLCJyb2xlIjoidXNlciIsImNsaWVudF9pZCI6IjRvVUlRYlJybnNyVjRQSWdDZ2NzWG5WcHRlWEJrY0tHIn0.By0jGhNPQ18HtdMnHMI9e0omtcC7bqjv8FyTK0UXVwMSgyyFWePnmx5lNB68rs1fx10vRggs9gtLv6bcOjwbmJ1stWGm_R1OGJd198MvDD8YSMe5pBISPo2CA88uH5qbId8b6TCLlchZAqrIn8yBCIJ8SU82zW34WAYks1kHZSkHMU5KSMmoJTot_KMMk4ZNbWNvbNVhYVidvIjXygPbar1wXwQRYG0yb8-06lQ9vJFTvN2S7pEW4WPMiLG2xFlAtUp_Ap-0X9XBYydUfOPKQBZ5ysaiafmAuAk3l4yxVl82KZoVznXkZwnITgsZfC7z_NJw4fsAQ1YKIM4w7dld6Zi5vJgdeJuvHWcg5w9JcX3bAaiO4ZCWpSZy-mU5BaDwx6kgYHOI_eTAaq-dW0kA8y1hSqxa9pnCQKKNaPF1sOtpajdRc1p9_qbcvdct7hLqmqtBr3TAo48FD7R50B7ZNfvi5r-judfW9-QApDpKKeDpK_F2uiTHN10TQybPwd8zog9gGlSZg9FsbQVjpd4kJicqtjPczq6esHuSih2_nERj6_UzPL0DSlKQKwEer1-to4AZXvAG9wf5-9lH-w05tzhuFVhLLsZdP8xjadXFwmpjAm-_gpRaPmxoIGynNc69VR80FW5PTf59eH3DgXzViJ2tLzDUpyBz7utGOxhNV_M",
-            "refresh_token": "ExXFyMl2hkDDxRWtqho1KyJsYjCJgJbJzeJsuDoKRTY7XJlhuRblFvgc5PT2idJk",
+            "access_token": "<access-token>",
+            "refresh_token": "<refresh-token>",
             "token_type": "bearer",
             "expires_in": 3600,
             "refresh_expires_in": 1209600
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 CLIENT_AUTHENTICATION_FAILED
+  description: Отсутствующие/неверные credentials или отключённый клиент.
+
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/login
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: <invalid-client-secret>
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "phone": "{{phone}}",
+        "code": "{{otpCode}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "CLIENT_AUTHENTICATION_FAILED"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 AUTH_PROVIDER_DISABLED
+  description: Провайдер отключён в конфигурации.
+
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/login
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "phone": "{{phone}}",
+        "code": "{{otpCode}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 404
+      text: Not Found
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "AUTH_PROVIDER_DISABLED"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 429 HTTP_RATE_LIMIT
+  description: Ограничение частоты HTTP-запросов; отличается от OTP cooldown. APP_DEBUG=false.
+
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/login
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "phone": "{{phone}}",
+        "code": "{{otpCode}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+      retry-after: 60
+    }
+    status: {
+      code: 429
+      text: Too Many Requests
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "Too Many Attempts."
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 INVALID_OTP
+  description: Код неверен, истёк или уже использован; для resend нет неподтверждённой регистрации.
+
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/login
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "phone": "{{phone}}",
+        "code": "{{otpCode}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "INVALID_OTP"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 IDENTIFIER_ALREADY_TAKEN
+  description: Конкурирующий запрос занял идентификатор после проверки уникальности.
+
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/login
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "phone": "{{phone}}",
+        "code": "{{otpCode}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "IDENTIFIER_ALREADY_TAKEN"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 VALIDATION_ERROR
+  description: Обязательное поле отсутствует; пример для APP_LOCALE=en.
+
+  request: {
+    url: {{baseUrl}}/auth/phone-otp/login
+    method: POST
+    mode: json
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "code": "{{otpCode}}"
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "The phone field is required.",
+          "errors": {
+            "phone": [
+              "The phone field is required."
+            ]
           }
         }
       '''

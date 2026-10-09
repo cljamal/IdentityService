@@ -18,3 +18,163 @@ docs {
   Показывает декодированный JWT и читаемые даты. Маршрут зарегистрирован всегда;
   контроллер возвращает 404 при APP_ENV=production. Нужны credentials клиента и JWT.
 }
+
+example {
+  name: 200
+  description: Демонстрационный ответ; значения токенов и дат приведены для примера.
+
+  request: {
+    url: {{baseUrl}}/auth/me
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Authorization: Bearer {{token}}
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 200
+      text: OK
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "user": {
+            "uuid": "00000000-0000-4000-8000-000000000001",
+            "role": "user"
+          },
+          "claims": {
+            "iss": "<issuer-url>",
+            "iat": 1791504000,
+            "exp": 1791507600,
+            "nbf": 1791504000,
+            "jti": "<jti>",
+            "sub": "00000000-0000-4000-8000-000000000001",
+            "prv": "<provider-hash>",
+            "role": "user",
+            "client_id": "<client-id>"
+          },
+          "readable": {
+            "issued_at": "2026-10-09T00:00:00+00:00",
+            "expires_at": "2026-10-09T01:00:00+00:00",
+            "age_seconds": 0,
+            "expires_in_seconds": 3600
+          }
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Production
+  description: APP_ENV=production, APP_DEBUG=false.
+
+  request: {
+    url: {{baseUrl}}/auth/me
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Authorization: Bearer {{token}}
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 404
+      text: Not Found
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 CLIENT_AUTHENTICATION_FAILED
+  description: Отсутствующие/неверные credentials или отключённый клиент.
+
+  request: {
+    url: {{baseUrl}}/auth/me
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: <invalid-client-secret>
+      Authorization: Bearer {{token}}
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "CLIENT_AUTHENTICATION_FAILED"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 UNAUTHENTICATED
+  description: Отсутствующий, истёкший, отозванный или недействительный JWT.
+
+  request: {
+    url: {{baseUrl}}/auth/me
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Authorization: Bearer <invalid-access-token>
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "Unauthenticated."
+        }
+      '''
+    }
+  }
+}

@@ -19,3 +19,153 @@ docs {
   а не сроком access token. expires_at — срок access token; is_current отмечает
   текущую сессию. Для Revoke Session вручную задайте sessionId из поля id.
 }
+
+example {
+  name: 200
+  description: Демонстрационный ответ; значения токенов и дат приведены для примера.
+
+  request: {
+    url: {{baseUrl}}/auth/sessions
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Authorization: Bearer {{token}}
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 200
+      text: OK
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "data": [
+            {
+              "id": 1,
+              "ip_address": "192.0.2.10",
+              "user_agent": "Bruno",
+              "created_at": "2026-10-09T00:00:00.000000Z",
+              "last_used_at": "2026-10-09T00:01:00.000000Z",
+              "expires_at": "2026-10-09T01:00:00.000000Z",
+              "is_current": true
+            }
+          ]
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 200 Пустой список
+  description: Демонстрационный ответ; значения токенов и дат приведены для примера.
+
+  request: {
+    url: {{baseUrl}}/auth/sessions
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Authorization: Bearer {{token}}
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 200
+      text: OK
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "data": []
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 CLIENT_AUTHENTICATION_FAILED
+  description: Отсутствующие/неверные credentials или отключённый клиент.
+
+  request: {
+    url: {{baseUrl}}/auth/sessions
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: <invalid-client-secret>
+      Authorization: Bearer {{token}}
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "CLIENT_AUTHENTICATION_FAILED"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 UNAUTHENTICATED
+  description: Отсутствующий, истёкший, отозванный или недействительный JWT.
+
+  request: {
+    url: {{baseUrl}}/auth/sessions
+    method: GET
+    mode: none
+    headers: {
+      Accept: application/json
+      X-Client-Id: {{clientId}}
+      X-Client-Secret: {{clientSecret}}
+      Authorization: Bearer <invalid-access-token>
+    }
+  }
+
+  response: {
+    headers: {
+      content-type: application/json
+    }
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+    body: {
+      type: json
+      content: '''
+        {
+          "message": "Unauthenticated."
+        }
+      '''
+    }
+  }
+}
