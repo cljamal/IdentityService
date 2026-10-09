@@ -1,0 +1,22 @@
+meta {
+  name: Resend Registration Code
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/email-password/register/resend
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{email}}"
+  }
+}
+
+docs {
+  Повторно отправляет код для существующей неподтверждённой регистрации email-password.
+  Доступно после истечения 60-секундного cooldown; новый код заменяет предыдущий.
+}

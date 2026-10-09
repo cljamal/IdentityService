@@ -16,6 +16,7 @@ use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Request/confirm mechanics for proving ownership of an identifier right
@@ -55,31 +56,41 @@ final readonly class RegistrationVerifier
 
     /**
      * @throws InvalidOtpException
+     * @throws OtpThrottledException
+     */
+    public function resend(AuthProviderName $provider, string $identifier, OtpDestination $destination, ?SmsTemplate $sms = null): void
+    {
+        $identity = $this->providers->findByIdentifier($provider, $identifier);
+
+        if ($identity === null || $identity->verified_at !== null || $identity->user === null) {
+            throw new InvalidOtpException;
+        }
+
+        $this->send($provider, $identifier, $destination, $sms);
+    }
+
+    /**
+     * @throws InvalidOtpException
      */
     public function confirm(AuthProviderName $provider, string $identifier, string $code): User
     {
         $subject = $this->subject($provider, $identifier);
-        $actual = $this->otp->get($subject);
 
-        if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException;
-        }
+        return $this->otp->consume($subject, $code, function () use ($provider, $identifier): User {
+            $identity = $this->providers->findByIdentifier($provider, $identifier);
 
-        $identity = $this->providers->findByIdentifier($provider, $identifier);
+            if (! $identity) {
+                throw new InvalidOtpException;
+            }
 
-        if (! $identity) {
-            throw new InvalidOtpException;
-        }
+            return DB::transaction(function () use ($identity, $provider, $identifier): User {
+                $user = $identity->userOrFail();
+                $this->providers->markVerified($provider, $user);
+                $this->history->log($user, $provider, IdentityChangeAction::Verified, null, $identifier);
 
-        $user = $identity->userOrFail();
-
-        $this->providers->markVerified($provider, $user);
-
-        $this->history->log($user, $provider, IdentityChangeAction::Verified, null, $identifier);
-
-        $this->otp->forget($subject);
-
-        return $user;
+                return $user;
+            });
+        });
     }
 
     private function subject(AuthProviderName $provider, string $identifier): string

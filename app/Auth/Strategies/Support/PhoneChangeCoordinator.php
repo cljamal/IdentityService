@@ -17,6 +17,8 @@ use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * 3-step phone change: OTP to the OLD number proves the requester still
@@ -46,8 +48,18 @@ final readonly class PhoneChangeCoordinator
             throw new NoLinkedIdentityException(AuthProviderName::PhoneOtp->value);
         }
 
-        $code = $this->challenge->request($this->oldSubject($user));
-        $this->otp->put($this->pendingSubject($user), $newPhone);
+        $attempt = (string) Str::uuid();
+        $pending = json_encode([
+            'attempt' => $attempt,
+            'phone' => $newPhone,
+        ], JSON_THROW_ON_ERROR);
+
+        $code = $this->challenge->requestWithCooldownAndPending(
+            $this->oldSubject($user, $attempt),
+            $this->oldCooldownSubject($user),
+            $this->pendingSubject($user),
+            $pending,
+        );
 
         OtpCodeIssued::dispatch(
             new OtpDestination(OtpChannel::Phone, $identity->identifier),
@@ -63,29 +75,33 @@ final readonly class PhoneChangeCoordinator
      */
     public function confirmOld(User $user, string $code, ?SmsTemplate $sms = null): void
     {
-        $this->challenge->verify($this->oldSubject($user), $code);
+        $pending = $this->pending($user);
 
-        $newPhone = $this->otp->get($this->pendingSubject($user));
-
-        if ($newPhone === null) {
+        if ($pending === null) {
             throw new InvalidOtpException;
         }
 
-        $newCode = $this->challenge->request($this->newSubject($user));
+        $this->challenge->consume(
+            $this->oldSubject($user, $pending['attempt']),
+            $code,
+            function () use ($user, $pending, $sms): void {
+                $newSubject = $this->newSubject($user, $pending['attempt']);
+                $newCode = $this->otp->get($newSubject)
+                    ?? $this->challenge->request($newSubject);
+                if (! $this->otp->extendTtlIfCurrent(
+                    $this->pendingSubject($user),
+                    json_encode($pending, JSON_THROW_ON_ERROR),
+                )) {
+                    throw new InvalidOtpException;
+                }
 
-        // Re-stash the pending number so its TTL restarts alongside the NEW
-        // code issued above — otherwise it would still expire on the OLD
-        // code's original TTL window, before the user can ever reach it.
-        $this->otp->put($this->pendingSubject($user), $newPhone);
-
-        // Старый код одноразовый — подтверждён, больше не нужен.
-        $this->challenge->forget($this->oldSubject($user));
-
-        OtpCodeIssued::dispatch(
-            new OtpDestination(OtpChannel::Phone, $newPhone),
-            $newCode,
-            OtpPurpose::IdentifierChangeNew,
-            $sms,
+                OtpCodeIssued::dispatch(
+                    new OtpDestination(OtpChannel::Phone, $pending['phone']),
+                    $newCode,
+                    OtpPurpose::IdentifierChangeNew,
+                    $sms,
+                );
+            },
         );
     }
 
@@ -94,44 +110,81 @@ final readonly class PhoneChangeCoordinator
      */
     public function confirmNew(User $user, string $code): void
     {
-        $this->challenge->verify($this->newSubject($user), $code);
+        $pending = $this->pending($user);
 
-        $newPhone = $this->otp->get($this->pendingSubject($user));
-
-        if ($newPhone === null) {
+        if ($pending === null) {
             throw new InvalidOtpException;
         }
 
-        $identity = $this->providers->findByUser(AuthProviderName::PhoneOtp, $user);
+        $newPhone = $pending['phone'];
 
-        if (! $identity) {
-            throw new InvalidOtpException;
+        $pendingValue = json_encode($pending, JSON_THROW_ON_ERROR);
+        $this->otp->consume(
+            $this->pendingSubject($user),
+            $pendingValue,
+            function () use ($user, $pending, $newPhone, $code): void {
+                $this->challenge->consume(
+                    $this->newSubject($user, $pending['attempt']),
+                    $code,
+                    function () use ($user, $newPhone): void {
+                        $identity = $this->providers->findByUser(AuthProviderName::PhoneOtp, $user);
+
+                        if (! $identity) {
+                            throw new InvalidOtpException;
+                        }
+
+                        $oldPhone = $identity->identifier;
+
+                        DB::transaction(function () use ($identity, $user, $oldPhone, $newPhone): void {
+                            $this->providers->changeIdentifier($identity, $newPhone);
+                            $this->history->log($user, AuthProviderName::PhoneOtp, IdentityChangeAction::IdentifierChanged, $oldPhone, $newPhone);
+                        });
+
+                        UserPhoneChanged::dispatch($user, $oldPhone, $newPhone);
+                    },
+                );
+            },
+        );
+    }
+
+    /**
+     * @return array{attempt: string, phone: string}|null
+     */
+    private function pending(User $user): ?array
+    {
+        $value = $this->otp->get($this->pendingSubject($user));
+
+        if ($value === null) {
+            return null;
         }
 
-        $oldPhone = $identity->identifier;
+        $pending = json_decode($value, true);
 
-        $this->providers->changeIdentifier($identity, $newPhone);
-
-        $this->history->log($user, AuthProviderName::PhoneOtp, IdentityChangeAction::IdentifierChanged, $oldPhone, $newPhone);
-
-        UserPhoneChanged::dispatch($user, $oldPhone, $newPhone);
-
-        $this->challenge->forget($this->newSubject($user));
-        $this->otp->forget($this->pendingSubject($user));
+        return is_array($pending)
+            && isset($pending['attempt'], $pending['phone'])
+            && is_string($pending['attempt'])
+            && is_string($pending['phone'])
+            ? ['attempt' => $pending['attempt'], 'phone' => $pending['phone']]
+            : null;
     }
 
-    private function oldSubject(User $user): string
+    private function oldSubject(User $user, string $attempt): string
     {
-        return "phone-otp-change-old:{$user->id}";
+        return "phone-otp-change-old:{$user->id}:{$attempt}";
     }
 
-    private function newSubject(User $user): string
+    private function newSubject(User $user, string $attempt): string
     {
-        return "phone-otp-change-new:{$user->id}";
+        return "phone-otp-change-new:{$user->id}:{$attempt}";
     }
 
     private function pendingSubject(User $user): string
     {
         return "phone-otp-change-pending:{$user->id}";
+    }
+
+    private function oldCooldownSubject(User $user): string
+    {
+        return "phone-otp-change-old-cooldown:{$user->id}";
     }
 }

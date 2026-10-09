@@ -11,6 +11,7 @@ use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\TokenPair;
 use App\Events\Ops\UserSessionRevoked;
 use App\Exceptions\Auth\UnsupportedAuthOperationException;
+use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use Illuminate\Support\Facades\Validator;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -41,12 +42,10 @@ final readonly class ResetPasswordAction
 
         Validator::make($data, $strategy->passwordResetRules())->validate();
 
-        $user = $strategy->resetPassword($data);
-
-        // A stolen refresh token shouldn't outlive the password it was
-        // issued under — revoke every existing session before issuing the
-        // fresh one below.
-        $this->sessions->revokeAllForUser($user);
+        $user = $strategy->resetPassword($data, function (User $user): void {
+            // A stolen refresh token shouldn't outlive the password it was issued under.
+            $this->sessions->revokeAllForUser($user);
+        });
 
         UserSessionRevoked::dispatch($user, SessionRevocationReason::PasswordReset);
 

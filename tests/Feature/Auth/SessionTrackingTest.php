@@ -3,12 +3,15 @@
 namespace Tests\Feature\Auth;
 
 use App\Auth\Guards\IdApiGuard;
+use App\Auth\RefreshToken;
 use App\Events\Ops\RefreshTokenReuseDetected;
 use App\Models\AuthSession;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
 use App\Repositories\EloquentAuthSessionRepository;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Tests\Concerns\ActsAsClient;
 use Tests\Fakes\RotationRaceLosingAuthSessionRepository;
@@ -231,6 +234,109 @@ class SessionTrackingTest extends TestCase
 
         $session = AuthSession::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertNotNull($session->revoked_at);
+    }
+
+    public function test_logout_revokes_the_same_session_after_a_refresh_rotates_it_in_the_logout_event(): void
+    {
+        $user = User::factory()->for($this->defaultClient)->create();
+        $guard = IdApiGuard::current();
+        $tokens = $guard->loginWithRefreshToken($user);
+        $payload = $guard->getPayload();
+        $session = AuthSession::query()->where('jti', $payload->get('jti'))->firstOrFail();
+
+        $otherTokens = $guard->loginWithRefreshToken($user);
+        $otherSession = AuthSession::query()
+            ->where('refresh_token_hash', RefreshToken::hash($otherTokens->refreshToken))
+            ->firstOrFail();
+
+        /** @var AuthSessionRepositoryInterface $sessions */
+        $sessions = $this->app->make(AuthSessionRepositoryInterface::class);
+        $rotationSucceeded = false;
+        $concurrentAccessToken = '';
+        $concurrentRefreshToken = null;
+        $concurrentJti = '';
+
+        Event::listen(Logout::class, function (Logout $event) use (
+            &$rotationSucceeded,
+            &$concurrentAccessToken,
+            &$concurrentRefreshToken,
+            &$concurrentJti,
+            $guard,
+            $session,
+            $sessions,
+            $user,
+        ): void {
+            $concurrentAccessToken = $guard->tokenById($user->getAuthIdentifier());
+            $this->assertIsString($concurrentAccessToken);
+            $guard->setToken($concurrentAccessToken);
+            $newPayload = $guard->getPayload();
+            $concurrentJti = (string) $newPayload->get('jti');
+            $concurrentRefreshToken = RefreshToken::generate();
+
+            $rotationSucceeded = $sessions->rotate(
+                $session,
+                $concurrentJti,
+                Carbon::createFromTimestamp((int) $newPayload->get('exp')),
+                $concurrentRefreshToken->hash,
+                now()->addDays(14),
+                null,
+                null,
+            );
+        });
+
+        $this->withToken($tokens->accessToken)->postJson('/api/auth/logout')->assertOk();
+
+        $this->assertTrue($rotationSucceeded);
+        $this->assertNotSame('', $concurrentAccessToken);
+        $this->assertNotNull($concurrentRefreshToken);
+        $this->assertNotNull($session->fresh()->revoked_at);
+        $this->assertTrue($sessions->isRevoked($concurrentJti));
+        $this->assertNull($sessions->findActiveByRefreshTokenHash($concurrentRefreshToken->hash));
+        $this->assertSame($otherSession->id, $sessions->findActiveByRefreshTokenHash(
+            RefreshToken::hash($otherTokens->refreshToken),
+        )?->id);
+
+        $this->withToken($concurrentAccessToken)->getJson('/api/auth/me')->assertUnauthorized();
+    }
+
+    public function test_refresh_rotation_is_rejected_when_logout_revokes_after_the_refresh_read(): void
+    {
+        $inner = new EloquentAuthSessionRepository;
+        $this->app->bind(
+            AuthSessionRepositoryInterface::class,
+            fn () => new RotationRaceLosingAuthSessionRepository(
+                $inner,
+                function (AuthSession $session) use ($inner): void {
+                    $inner->revokeById($session->id);
+                },
+            ),
+        );
+
+        $user = User::factory()->for($this->defaultClient)->create();
+        $guard = IdApiGuard::current();
+        $tokens = $guard->loginWithRefreshToken($user);
+        $otherTokens = $guard->loginWithRefreshToken($user);
+        $session = AuthSession::query()
+            ->where('refresh_token_hash', RefreshToken::hash($tokens->refreshToken))
+            ->firstOrFail();
+        $otherSession = AuthSession::query()
+            ->where('refresh_token_hash', RefreshToken::hash($otherTokens->refreshToken))
+            ->firstOrFail();
+
+        $this->postJson('/api/auth/refresh', ['refresh_token' => $tokens->refreshToken])
+            ->assertUnauthorized()
+            ->assertJsonPath('code', 'INVALID_REFRESH_TOKEN')
+            ->assertJsonMissingPath('data.access_token')
+            ->assertJsonMissingPath('data.refresh_token');
+
+        $revokedSession = $session->fresh();
+        $this->assertNotNull($revokedSession);
+        $this->assertNotNull($revokedSession->revoked_at);
+        $this->assertSame($session->refresh_token_hash, $revokedSession->refresh_token_hash);
+        $this->assertSame($otherSession->id, $inner->findActiveByRefreshTokenHash(
+            RefreshToken::hash($otherTokens->refreshToken),
+        )?->id);
+        $this->assertSame(2, AuthSession::query()->where('user_id', $user->id)->count());
     }
 
     public function test_can_list_sessions_with_the_current_one_flagged(): void

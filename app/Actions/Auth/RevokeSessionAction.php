@@ -26,7 +26,7 @@ final readonly class RevokeSessionAction
             throw new SessionNotFoundException;
         }
 
-        $this->sessions->revokeByJti($session->jti);
+        $this->sessions->revoke($session);
 
         UserSessionRevoked::dispatch($user, SessionRevocationReason::ExplicitRevoke);
     }

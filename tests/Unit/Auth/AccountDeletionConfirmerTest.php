@@ -25,12 +25,12 @@ class AccountDeletionConfirmerTest extends TestCase
         $confirmer->request(AuthProviderName::PhoneOtp, $user, new OtpDestination(OtpChannel::Phone, '998901234567'));
         $code = $otp->peek('phone-otp-delete:1');
 
-        $confirmer->confirm(AuthProviderName::PhoneOtp, $user, $code);
+        $confirmer->confirm(AuthProviderName::PhoneOtp, $user, $code, static function (): void {});
 
         $this->expectException(InvalidOtpException::class);
 
         // Same code again: already consumed by the confirm() above.
-        $confirmer->confirm(AuthProviderName::PhoneOtp, $user, $code);
+        $confirmer->confirm(AuthProviderName::PhoneOtp, $user, $code, static function (): void {});
     }
 
     public function test_confirm_rejects_a_wrong_code(): void
@@ -45,6 +45,6 @@ class AccountDeletionConfirmerTest extends TestCase
 
         $this->expectException(InvalidOtpException::class);
 
-        $confirmer->confirm(AuthProviderName::PhoneOtp, $user, '0000');
+        $confirmer->confirm(AuthProviderName::PhoneOtp, $user, '0000', static function (): void {});
     }
 }

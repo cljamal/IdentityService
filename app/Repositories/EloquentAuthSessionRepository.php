@@ -48,6 +48,7 @@ final class EloquentAuthSessionRepository implements AuthSessionRepositoryInterf
         return AuthSession::query()
             ->where('id', $session->id)
             ->where('refresh_token_hash', $session->refresh_token_hash)
+            ->whereNull('revoked_at')
             ->update([
                 'jti' => $newJti,
                 'expires_at' => $expiresAt,
@@ -65,9 +66,22 @@ final class EloquentAuthSessionRepository implements AuthSessionRepositoryInterf
         AuthSession::query()->where('jti', $jti)->update(['revoked_at' => now()]);
     }
 
+    public function findByJti(string $jti): ?AuthSession
+    {
+        return AuthSession::query()->where('jti', $jti)->first();
+    }
+
+    public function revokeById(int $sessionId): void
+    {
+        AuthSession::query()
+            ->whereKey($sessionId)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
+    }
+
     public function revoke(AuthSession $session): void
     {
-        $session->update(['revoked_at' => now()]);
+        $this->revokeById($session->id);
     }
 
     public function revokeAllForUser(User $user): void

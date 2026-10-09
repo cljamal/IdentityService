@@ -42,6 +42,10 @@ interface AuthSessionRepositoryInterface
 
     public function revokeByJti(string $jti): void;
 
+    public function findByJti(string $jti): ?AuthSession;
+
+    public function revokeById(int $sessionId): void;
+
     public function revoke(AuthSession $session): void;
 
     public function revokeAllForUser(User $user): void;

@@ -6,6 +6,7 @@ use App\Auth\CurrentClient;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\Strategies\Contracts\ConfirmsDeletion;
 use App\Auth\Strategies\Contracts\NormalizesInput;
+use App\Auth\Strategies\Contracts\ResendsRegistrationCode;
 use App\Auth\Strategies\Contracts\ResetsPassword;
 use App\Auth\Strategies\Support\AccountDeletionConfirmer;
 use App\Auth\Strategies\Support\CodeBasedPasswordReset;
@@ -17,9 +18,10 @@ use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
+use Closure;
 use Illuminate\Support\Str;
 
-final readonly class EmailPasswordStrategy extends PasswordStrategy implements ConfirmsDeletion, NormalizesInput, ResetsPassword
+final readonly class EmailPasswordStrategy extends PasswordStrategy implements ConfirmsDeletion, NormalizesInput, ResendsRegistrationCode, ResetsPassword
 {
     public function __construct(
         AuthProviderRepositoryInterface $providers,
@@ -93,6 +95,28 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
     /**
      * @return array<string, mixed>
      */
+    public function registrationResendRules(): array
+    {
+        return ['email' => ['required', 'email', 'max:255']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function resendRegistrationCode(array $data, ?SmsTemplate $sms = null): void
+    {
+        $email = $data['email'];
+        $this->verification->resend(
+            $this->provider(),
+            $email,
+            new OtpDestination(OtpChannel::Email, $email),
+            $sms,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function passwordResetRequestRules(): array
     {
         return ['email' => ['required', 'email']];
@@ -107,7 +131,7 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
         $identity = $this->providers->findByIdentifier($this->provider(), $email);
 
         // Канал доставки для email-password — сам identifier.
-        $this->reset->request($this->provider(), $email, $identity ? new OtpDestination(OtpChannel::Email, $email) : null, $sms);
+        $this->reset->request($this->provider(), $email, $identity, $identity ? new OtpDestination(OtpChannel::Email, $email) : null, $sms);
     }
 
     /**
@@ -125,9 +149,9 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
     /**
      * @param  array<string, mixed>  $data
      */
-    public function resetPassword(array $data): User
+    public function resetPassword(array $data, Closure $afterPasswordReset): User
     {
-        return $this->reset->confirm($this->provider(), $data['email'], $data['code'], $data['password']);
+        return $this->reset->confirm($this->provider(), $data['email'], $data['code'], $data['password'], $afterPasswordReset);
     }
 
     public function requestDeletion(User $user, ?SmsTemplate $sms = null): void
@@ -152,8 +176,8 @@ final readonly class EmailPasswordStrategy extends PasswordStrategy implements C
     /**
      * @param  array<string, mixed>  $data
      */
-    public function confirmDeletion(User $user, array $data): void
+    public function confirmDeletion(User $user, array $data, Closure $onConfirmed): void
     {
-        $this->deletion->confirm($this->provider(), $user, $data['code']);
+        $this->deletion->confirm($this->provider(), $user, $data['code'], $onConfirmed);
     }
 }

@@ -19,6 +19,9 @@ interface AuthProviderRepositoryInterface
      */
     public function findByIdentifier(AuthProviderName $provider, string $identifier): ?AuthProvider;
 
+    /** Find one identity by its stable primary key while holding a row lock. */
+    public function findByIdForUpdate(int $id): ?AuthProvider;
+
     /**
      * Find the given user's identity record for the given provider, if any.
      */

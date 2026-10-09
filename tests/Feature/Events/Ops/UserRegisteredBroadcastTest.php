@@ -55,6 +55,7 @@ class UserRegisteredBroadcastTest extends TestCase
         ])->assertOk();
 
         // Second login, same (now-existing) phone number.
+        $this->travel(60)->seconds();
         $this->postJson('/api/auth/phone-otp/otp', ['phone' => '998901234567'])->assertOk();
 
         Event::fake([UserRegistered::class]);

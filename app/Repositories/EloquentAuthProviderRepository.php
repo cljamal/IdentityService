@@ -13,6 +13,7 @@ use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Throwable;
 
 final readonly class EloquentAuthProviderRepository implements AuthProviderRepositoryInterface
@@ -48,6 +49,15 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
             ->where('client_id', $this->currentClient->get()->id)
             ->where('provider', $provider->value)
             ->where('identifier', $identifier)
+            ->first();
+    }
+
+    public function findByIdForUpdate(int $id): ?AuthProvider
+    {
+        return AuthProvider::query()
+            ->where('client_id', $this->currentClient->get()->id)
+            ->whereKey($id)
+            ->lockForUpdate()
             ->first();
     }
 
@@ -99,7 +109,7 @@ final readonly class EloquentAuthProviderRepository implements AuthProviderRepos
             $provider = AuthProviderName::tryFrom($identity->provider);
             $original = $identity->identifier;
 
-            $identity->update(['identifier' => "{$original}::deleted::{$identity->id}"]);
+            $identity->update(['identifier' => 'deleted:'.Str::uuid()]);
             $identity->delete();
 
             $this->history->log($user, $provider, IdentityChangeAction::IdentifierReleased, $original, null);

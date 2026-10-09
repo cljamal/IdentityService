@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Auth\AuthStrategyResolver;
 use App\Auth\CurrentClient;
+use App\Auth\Enums\AuthProviderName;
 use App\Auth\Guards\IdApiGuard;
 use App\Auth\Rescue\ChainedRescueContactResolver;
 use App\Auth\Rescue\LinkedIdentityRescueContactResolver;
@@ -23,8 +24,12 @@ use App\Repositories\EloquentAuthSessionRepository;
 use App\Repositories\EloquentIdentityChangeLogRepository;
 use App\Repositories\EloquentRoleRepository;
 use App\Repositories\RedisOtpRepository;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -73,5 +78,64 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Auth::extend('id-api', IdApiGuard::resolve(...));
+
+        $definitions = [
+            'auth.otp' => ['phone'],
+            'auth.login' => ['email', 'username', 'phone'],
+            'auth.register' => ['email', 'username'],
+            'auth.register.verify' => ['email', 'username'],
+            'auth.register.resend' => ['email'],
+            'auth.password.forgot' => ['email', 'username'],
+            'auth.password.reset' => ['email', 'username'],
+            'auth.password.change' => null,
+            'auth.identifier.change' => null,
+            'auth.identifier.change.confirm.old' => null,
+            'auth.identifier.change.confirm.new' => null,
+            'auth.account.delete' => null,
+            'auth.account.delete.confirm' => null,
+            'auth.refresh' => ['refresh_token'],
+        ];
+
+        foreach ($definitions as $name => $identifierFields) {
+            RateLimiter::for($name, function (Request $request) use ($name, $identifierFields) {
+                $currentClient = app(CurrentClient::class)->resolved();
+                $clientId = $currentClient === null ? 'unknown' : $currentClient->id;
+                $operation = str_replace('.', ':', $name);
+                $limits = [Limit::perMinute(30)->by("{$clientId}:{$operation}:ip:{$request->ip()}")];
+
+                $user = $request->user('id-api');
+
+                if ($user !== null) {
+                    $limits[] = Limit::perMinute(10)->by("{$clientId}:{$operation}:user:{$user->getAuthIdentifier()}");
+                }
+
+                if ($identifierFields !== null) {
+                    $provider = $request->route('provider');
+                    $provider = $provider instanceof AuthProviderName ? $provider->value : (string) $provider;
+                    $preferredField = match ($provider) {
+                        AuthProviderName::PhoneOtp->value => 'phone',
+                        AuthProviderName::UsernamePassword->value => 'username',
+                        default => 'email',
+                    };
+                    $identifierField = in_array($preferredField, $identifierFields, true)
+                        ? $preferredField
+                        : $identifierFields[0];
+                    $identifier = $request->input($identifierField);
+
+                    if (is_string($identifier) && $identifier !== '') {
+                        if ($identifierField === 'phone') {
+                            $identifier = preg_replace('/\\D+/', '', $identifier) ?? $identifier;
+                        } elseif ($identifierField === 'email') {
+                            $identifier = Str::lower(trim($identifier));
+                        }
+
+                        $identityKey = hash('sha256', "{$provider}:{$identifier}");
+                        $limits[] = Limit::perMinute(10)->by("{$clientId}:{$operation}:identity:{$identityKey}");
+                    }
+                }
+
+                return $limits;
+            });
+        }
     }
 }

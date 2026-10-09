@@ -2,11 +2,14 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Events\Ops\RefreshTokenReuseDetected;
 use App\Models\AuthProvider;
+use App\Models\AuthSession;
 use App\Models\Client;
 use App\Repositories\Contracts\OtpRepositoryInterface;
 use Database\Factories\ClientFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\Fakes\FakeOtpRepository;
@@ -80,6 +83,30 @@ class ClientIsolationTest extends TestCase
             ->postJson('/api/auth/refresh', ['refresh_token' => $refreshToken])
             ->assertUnauthorized()
             ->assertJsonPath('code', 'INVALID_REFRESH_TOKEN');
+    }
+
+    public function test_replayed_refresh_token_from_another_client_does_not_revoke_its_session(): void
+    {
+        $clientA = Client::factory()->create();
+        $clientB = Client::factory()->create();
+        $tokens = $this->registerUsernamePassword($clientA, 'replay_scope')
+            ->assertOk();
+        $refreshToken = $tokens->json('data.refresh_token');
+
+        $this->withHeaders($this->headersFor($clientA))
+            ->postJson('/api/auth/refresh', ['refresh_token' => $refreshToken])
+            ->assertOk();
+
+        $session = AuthSession::query()->firstOrFail();
+        Event::fake([RefreshTokenReuseDetected::class]);
+
+        $this->withHeaders($this->headersFor($clientB))
+            ->postJson('/api/auth/refresh', ['refresh_token' => $refreshToken])
+            ->assertUnauthorized()
+            ->assertJsonPath('code', 'INVALID_REFRESH_TOKEN');
+
+        $this->assertNull($session->fresh()->revoked_at);
+        Event::assertNotDispatched(RefreshTokenReuseDetected::class);
     }
 
     public function test_an_otp_code_requested_under_one_client_does_not_verify_under_another(): void

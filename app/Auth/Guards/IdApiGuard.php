@@ -39,6 +39,8 @@ use PHPOpenSourceSaver\JWTAuth\JWTGuard;
  */
 final class IdApiGuard extends JWTGuard
 {
+    private ?int $authenticatedSessionId = null;
+
     public function __construct(
         JWT $jwt,
         UserProvider $provider,
@@ -122,7 +124,9 @@ final class IdApiGuard extends JWTGuard
 
         $payload = $this->getPayload();
 
-        if ($this->sessions->isRevoked($payload->get('jti'))) {
+        $session = $this->sessions->findByJti($payload->get('jti'));
+
+        if ($session === null || $session->revoked_at !== null) {
             $this->user = null;
 
             return null;
@@ -143,7 +147,23 @@ final class IdApiGuard extends JWTGuard
             return null;
         }
 
+        $this->authenticatedSessionId = $session->id;
+
         return $user;
+    }
+
+    /**
+     * Clear the cached user when Laravel replaces the request instance.
+     * Long-lived workers and sequential HTTP tests must authenticate each
+     * request against its own client context.
+     */
+    public function setRequest(Request $request): static
+    {
+        $this->user = null;
+        $this->authenticatedSessionId = null;
+        $this->jwt->unsetToken();
+
+        return parent::setRequest($request);
     }
 
     /**
@@ -171,6 +191,7 @@ final class IdApiGuard extends JWTGuard
             $this->request->ip(),
             $this->request->userAgent(),
         );
+        $this->authenticatedSessionId = $this->sessions->findByJti($payload->get('jti'))?->id;
 
         return new TokenPair($accessToken, $refreshToken->plainText);
     }
@@ -241,6 +262,8 @@ final class IdApiGuard extends JWTGuard
             throw new InvalidRefreshTokenException;
         }
 
+        $this->authenticatedSessionId = $this->sessions->findByJti($payload->get('jti'))?->id;
+
         return new TokenPair($accessToken, $newRefreshToken->plainText);
     }
 
@@ -263,14 +286,16 @@ final class IdApiGuard extends JWTGuard
             throw new InvalidRefreshTokenException;
         }
 
-        $this->sessions->revoke($reused);
-
         /** @var User|null $user */
         $user = $reused->user;
 
-        if ($user !== null) {
-            RefreshTokenReuseDetected::dispatch($user, $this->request->ip(), $this->request->userAgent());
+        if ($user === null || $user->client_id !== $this->currentClient->get()->id) {
+            throw new InvalidRefreshTokenException;
         }
+
+        $this->sessions->revoke($reused);
+
+        RefreshTokenReuseDetected::dispatch($user, $this->request->ip(), $this->request->userAgent());
 
         throw new RefreshTokenReusedException;
     }
@@ -289,17 +314,21 @@ final class IdApiGuard extends JWTGuard
      */
     public function logout($forceForever = false): void
     {
-        $jti = null;
+        $sessionId = $this->authenticatedSessionId;
 
-        try {
-            $jti = $this->getPayload()->get('jti');
-        } catch (JWTException) {
+        if ($sessionId === null) {
+            try {
+                $sessionId = $this->sessions->findByJti($this->getPayload()->get('jti'))?->id;
+            } catch (JWTException) {
+            }
         }
 
         parent::logout($forceForever);
 
-        if ($jti !== null) {
-            $this->sessions->revokeByJti($jti);
+        if ($sessionId !== null) {
+            $this->sessions->revokeById($sessionId);
         }
+
+        $this->authenticatedSessionId = null;
     }
 }

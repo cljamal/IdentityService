@@ -6,6 +6,7 @@ use App\Models\AuthSession;
 use App\Models\Client;
 use App\Models\User;
 use App\Repositories\Contracts\AuthSessionRepositoryInterface;
+use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -18,7 +19,10 @@ use Illuminate\Support\Collection;
  */
 final class RotationRaceLosingAuthSessionRepository implements AuthSessionRepositoryInterface
 {
-    public function __construct(private readonly AuthSessionRepositoryInterface $inner) {}
+    public function __construct(
+        private readonly AuthSessionRepositoryInterface $inner,
+        private readonly ?Closure $beforeRotate = null,
+    ) {}
 
     public function record(
         User $user,
@@ -41,12 +45,36 @@ final class RotationRaceLosingAuthSessionRepository implements AuthSessionReposi
         ?string $ip,
         ?string $userAgent,
     ): bool {
-        return false;
+        if ($this->beforeRotate === null) {
+            return false;
+        }
+
+        ($this->beforeRotate)($session);
+
+        return $this->inner->rotate(
+            $session,
+            $newJti,
+            $expiresAt,
+            $newRefreshTokenHash,
+            $newRefreshExpiresAt,
+            $ip,
+            $userAgent,
+        );
     }
 
     public function revokeByJti(string $jti): void
     {
         $this->inner->revokeByJti($jti);
+    }
+
+    public function findByJti(string $jti): ?AuthSession
+    {
+        return $this->inner->findByJti($jti);
+    }
+
+    public function revokeById(int $sessionId): void
+    {
+        $this->inner->revokeById($sessionId);
     }
 
     public function revoke(AuthSession $session): void

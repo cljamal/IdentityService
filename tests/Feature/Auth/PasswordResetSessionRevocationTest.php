@@ -46,7 +46,8 @@ class PasswordResetSessionRevocationTest extends TestCase
 
         /** @var FakeOtpRepository $otp */
         $otp = $this->app->make(OtpRepositoryInterface::class);
-        $code = $otp->peek("{$this->defaultClient->id}:email-password-reset:user@example.com");
+        $identity = AuthProvider::query()->where('user_id', $user->id)->firstOrFail();
+        $code = $otp->peek("{$this->defaultClient->id}:email-password-reset:{$identity->id}:user@example.com");
 
         $this->postJson('/api/auth/email-password/password/reset', [
             'email' => 'user@example.com',
@@ -54,6 +55,13 @@ class PasswordResetSessionRevocationTest extends TestCase
             'password' => 'newpassword123',
             'password_confirmation' => 'newpassword123',
         ])->assertOk();
+
+        $this->postJson('/api/auth/email-password/password/reset', [
+            'email' => 'user@example.com',
+            'code' => $code,
+            'password' => 'anotherpassword123',
+            'password_confirmation' => 'anotherpassword123',
+        ])->assertStatus(422)->assertJsonPath('code', 'INVALID_OTP');
 
         $this->assertNotNull(AuthSession::query()->find($originalSessionId)->revoked_at);
 

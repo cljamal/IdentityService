@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
 use App\Notifications\Otp\SmsTemplate;
+use Closure;
 
 /**
  * Request/confirm mechanics for proving the account holder still controls
@@ -31,14 +32,18 @@ final readonly class AccountDeletionConfirmer
     }
 
     /**
+     * @template TResult
+     *
+     * @param  Closure(): TResult  $operation
+     * @return TResult
+     *
      * @throws InvalidOtpException
      */
-    public function confirm(AuthProviderName $provider, User $user, string $code): void
+    public function confirm(AuthProviderName $provider, User $user, string $code, Closure $operation): mixed
     {
         $subject = $this->subject($provider, $user);
 
-        $this->challenge->verify($subject, $code);
-        $this->challenge->forget($subject);
+        return $this->challenge->consume($subject, $code, $operation);
     }
 
     private function subject(AuthProviderName $provider, User $user): string

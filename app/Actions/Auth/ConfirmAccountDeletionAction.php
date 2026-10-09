@@ -29,8 +29,6 @@ final readonly class ConfirmAccountDeletionAction
 
         Validator::make($data, $strategy->confirmDeletionRules())->validate();
 
-        $strategy->confirmDeletion($user, $data);
-
-        DeleteAccountAction::run($user);
+        $strategy->confirmDeletion($user, $data, fn () => DeleteAccountAction::run($user));
     }
 }

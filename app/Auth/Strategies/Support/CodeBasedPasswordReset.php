@@ -9,6 +9,7 @@ use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
 use App\Events\Notifications\OtpCodeIssued;
 use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
+use App\Models\AuthProvider;
 use App\Models\User;
 use App\Notifications\Otp\OtpDestination;
 use App\Notifications\Otp\OtpPurpose;
@@ -16,6 +17,8 @@ use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
+use Closure;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -38,9 +41,9 @@ final readonly class CodeBasedPasswordReset
     /**
      * @throws OtpThrottledException
      */
-    public function request(AuthProviderName $provider, string $identifier, ?OtpDestination $destination, ?SmsTemplate $sms = null): void
+    public function request(AuthProviderName $provider, string $identifier, ?AuthProvider $identity, ?OtpDestination $destination, ?SmsTemplate $sms = null): void
     {
-        $subject = $this->subject($provider, $identifier);
+        $subject = $this->subject($provider, $identifier, $identity?->id);
 
         if (! $this->otp->canBeRequested($subject)) {
             throw new OtpThrottledException($this->otp->secondsUntilNextRequest($subject));
@@ -60,43 +63,47 @@ final readonly class CodeBasedPasswordReset
     /**
      * @throws InvalidOtpException
      */
-    public function confirm(AuthProviderName $provider, string $identifier, string $code, string $newPassword): User
+    public function confirm(AuthProviderName $provider, string $identifier, string $code, string $newPassword, Closure $afterReset): User
     {
-        $subject = $this->subject($provider, $identifier);
-        $actual = $this->otp->get($subject);
-
-        if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException;
-        }
-
         $identity = $this->providers->findByIdentifier($provider, $identifier);
 
-        if (! $identity) {
+        if ($identity === null) {
             throw new InvalidOtpException;
         }
 
-        $this->providers->updateSecret($identity, ['password' => Hash::make($newPassword)]);
+        $subject = $this->subject($provider, $identifier, $identity->id);
 
-        $user = $identity->userOrFail();
+        return $this->otp->consume($subject, $code, function () use ($identity, $provider, $identifier, $newPassword, $afterReset): User {
+            return DB::transaction(function () use ($identity, $provider, $identifier, $newPassword, $afterReset): User {
+                $currentIdentity = $this->providers->findByIdForUpdate($identity->id);
 
-        // Успешное подтверждение кода на тот же канал — точно такое же
-        // доказательство владения, как и верификация при регистрации.
-        // Иначе аккаунт, ни разу не подтверждённый при регистрации, мог
-        // бы навсегда остаться заблокированным на логине даже после
-        // легитимного сброса пароля через тот же email/rescue-контакт.
-        $this->providers->markVerified($provider, $user);
+                if ($currentIdentity === null
+                    || $currentIdentity->provider !== $provider->value
+                    || $currentIdentity->identifier !== $identifier
+                    || $currentIdentity->user_id !== $identity->user_id) {
+                    throw new InvalidOtpException;
+                }
 
-        $this->history->log($user, $provider, IdentityChangeAction::PasswordReset, null, null);
+                $user = $currentIdentity->user;
 
-        // Код "сжигаем" только после успешной записи — иначе сбой записи
-        // потерял бы уже введённый верный код без всякой пользы для юзера.
-        $this->otp->forget($subject);
+                if ($user === null) {
+                    throw new InvalidOtpException;
+                }
 
-        return $user;
+                $this->providers->updateSecret($currentIdentity, ['password' => Hash::make($newPassword)]);
+                $this->providers->markVerified($provider, $user);
+                $this->history->log($user, $provider, IdentityChangeAction::PasswordReset, null, null);
+                $afterReset($user);
+
+                return $user;
+            });
+        });
     }
 
-    private function subject(AuthProviderName $provider, string $identifier): string
+    private function subject(AuthProviderName $provider, string $identifier, ?int $identityId): string
     {
-        return "{$this->currentClient->get()->id}:{$provider->value}-reset:{$identifier}";
+        $generation = $identityId === null ? 'unmatched' : (string) $identityId;
+
+        return "{$this->currentClient->get()->id}:{$provider->value}-reset:{$generation}:{$identifier}";
     }
 }

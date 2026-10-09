@@ -4,6 +4,7 @@ namespace App\Auth\Strategies\Contracts;
 
 use App\Models\User;
 use App\Notifications\Otp\SmsTemplate;
+use Closure;
 
 /**
  * Additional contract for password-based providers that can reset a
@@ -35,6 +36,7 @@ interface ResetsPassword
 
     /**
      * @param  array<string, mixed>  $data
+     * @param  Closure(User): void  $afterPasswordReset
      */
-    public function resetPassword(array $data): User;
+    public function resetPassword(array $data, Closure $afterPasswordReset): User;
 }

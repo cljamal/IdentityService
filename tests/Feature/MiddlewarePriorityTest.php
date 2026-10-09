@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Middleware\AuthenticateClient;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
+use Illuminate\Contracts\Http\Kernel;
 use Tests\TestCase;
 
 /**
@@ -29,6 +30,8 @@ class MiddlewarePriorityTest extends TestCase
 {
     public function test_the_client_middleware_is_prioritized_ahead_of_the_auth_middleware(): void
     {
+        $this->app->make(Kernel::class)->bootstrap();
+
         $priority = app('router')->middlewarePriority;
 
         $clientIndex = array_search(AuthenticateClient::class, $priority, true);

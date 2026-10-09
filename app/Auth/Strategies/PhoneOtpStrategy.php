@@ -15,7 +15,6 @@ use App\Auth\Strategies\Support\AccountDeletionConfirmer;
 use App\Auth\Strategies\Support\PhoneChangeCoordinator;
 use App\Events\Notifications\OtpCodeIssued;
 use App\Events\Ops\UserRegistered;
-use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\NoLinkedIdentityException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Models\User;
@@ -25,6 +24,7 @@ use App\Notifications\Otp\OtpPurpose;
 use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\OtpRepositoryInterface;
+use Closure;
 use Illuminate\Validation\Rule;
 
 final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier, ConfirmsDeletion, IssuesVerificationCode, NormalizesInput
@@ -107,28 +107,15 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
         $code = $data['code'];
         $subject = $this->subject($phone);
 
-        $actual = $this->otp->get($subject);
+        return $this->otp->consume($subject, $code, function () use ($phone): User {
+            $user = $this->providers->firstOrCreateUser(AuthProviderName::PhoneOtp, $phone);
 
-        if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException;
-        }
+            if ($user->wasRecentlyCreated) {
+                UserRegistered::dispatch($user, AuthProviderName::PhoneOtp);
+            }
 
-        $user = $this->providers->firstOrCreateUser(AuthProviderName::PhoneOtp, $phone);
-
-        // wasRecentlyCreated is Eloquent's own "did create() just insert this
-        // row" flag — firstOrCreateUser() either found an existing identity
-        // or created one via createUserWithIdentity(), so this is exactly
-        // "is this phone number new" without needing the repository to
-        // return anything extra to say so.
-        if ($user->wasRecentlyCreated) {
-            UserRegistered::dispatch($user, AuthProviderName::PhoneOtp);
-        }
-
-        // Код "сжигаем" только после успешного логина/создания юзера —
-        // иначе сбой записи в БД потерял бы уже введённый верный код.
-        $this->otp->forget($subject);
-
-        return $user;
+            return $user;
+        });
     }
 
     /**
@@ -216,9 +203,9 @@ final readonly class PhoneOtpStrategy implements AuthStrategy, ChangesIdentifier
     /**
      * @param  array<string, mixed>  $data
      */
-    public function confirmDeletion(User $user, array $data): void
+    public function confirmDeletion(User $user, array $data, Closure $onConfirmed): void
     {
-        $this->deletion->confirm(AuthProviderName::PhoneOtp, $user, $data['code']);
+        $this->deletion->confirm(AuthProviderName::PhoneOtp, $user, $data['code'], $onConfirmed);
     }
 
     /**

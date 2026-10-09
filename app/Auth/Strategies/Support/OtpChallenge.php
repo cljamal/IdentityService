@@ -3,16 +3,13 @@
 namespace App\Auth\Strategies\Support;
 
 use App\Auth\Strategies\Concerns\GeneratesVerificationCode;
-use App\Exceptions\Auth\InvalidOtpException;
 use App\Exceptions\Auth\OtpThrottledException;
 use App\Repositories\Contracts\OtpRepositoryInterface;
+use Closure;
 
 /**
  * Shared throttled-OTP mechanics: check the resend cooldown and issue a
- * code, or verify one against what's stored. Callers own subject naming,
- * delivery (SMS/email/log) and when exactly a verified code is forgotten —
- * some flows need to hold off on that until later steps are known to
- * succeed, so it's a separate call rather than baked into verify().
+ * code, or atomically consume one while its protected operation runs.
  */
 final readonly class OtpChallenge
 {
@@ -35,20 +32,37 @@ final readonly class OtpChallenge
         return $code;
     }
 
-    /**
-     * @throws InvalidOtpException
-     */
-    public function verify(string $subject, string $code): void
-    {
-        $actual = $this->otp->get($subject);
+    /** @throws OtpThrottledException */
+    public function requestWithCooldownAndPending(
+        string $challengeSubject,
+        string $cooldownSubject,
+        string $pendingSubject,
+        string $pendingValue,
+    ): string {
+        $code = $this->generateCode();
+        $retryAfter = $this->otp->issueWithCooldownAndReplacePending(
+            $challengeSubject,
+            $code,
+            $cooldownSubject,
+            $pendingSubject,
+            $pendingValue,
+        );
 
-        if ($actual === null || ! hash_equals($actual, $code)) {
-            throw new InvalidOtpException;
+        if ($retryAfter > 0) {
+            throw new OtpThrottledException($retryAfter);
         }
+
+        return $code;
     }
 
-    public function forget(string $subject): void
+    /**
+     * @template TResult
+     *
+     * @param  Closure(): TResult  $operation
+     * @return TResult
+     */
+    public function consume(string $subject, string $code, Closure $operation): mixed
     {
-        $this->otp->forget($subject);
+        return $this->otp->consume($subject, $code, $operation);
     }
 }

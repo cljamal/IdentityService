@@ -34,13 +34,13 @@ class UserPhoneChangedBroadcastTest extends TestCase
             ->postJson('/api/auth/phone-otp/identifier/change', ['new_phone' => '998911111111'])
             ->assertOk();
 
-        $oldCode = $otp->peek("phone-otp-change-old:{$user->id}");
+        $oldCode = $otp->peekLatest("phone-otp-change-old:{$user->id}:");
 
         $this->withToken($accessToken)
             ->postJson('/api/auth/phone-otp/identifier/change/confirm-old', ['code' => $oldCode])
             ->assertOk();
 
-        $newCode = $otp->peek("phone-otp-change-new:{$user->id}");
+        $newCode = $otp->peekLatest("phone-otp-change-new:{$user->id}:");
 
         Event::fake([UserPhoneChanged::class]);
 

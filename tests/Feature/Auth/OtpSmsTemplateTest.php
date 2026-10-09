@@ -28,8 +28,8 @@ use Tests\TestCase;
 
 class OtpSmsTemplateTest extends TestCase
 {
-    use RefreshDatabase;
     use ActsAsClient;
+    use RefreshDatabase;
 
     private ?MockInterface $smsMock = null;
 
@@ -132,7 +132,7 @@ class OtpSmsTemplateTest extends TestCase
         /** @var FakeOtpRepository $otp */
         $otp = $this->app->make(OtpRepositoryInterface::class);
         $this->postJson('/api/auth/phone-otp/identifier/change/confirm-old', [
-            'code' => $otp->peek("phone-otp-change-old:{$user->id}"),
+            'code' => $otp->peekLatest("phone-otp-change-old:{$user->id}:"),
             'sms' => ['template' => 'Новый номер {{code}}'],
         ])->assertOk();
     }
@@ -150,12 +150,12 @@ class OtpSmsTemplateTest extends TestCase
 
         /** @var FakeOtpRepository $otp */
         $otp = $this->app->make(OtpRepositoryInterface::class);
-        $oldCode = $otp->peek("phone-otp-change-old:{$user->id}");
+        $oldCode = $otp->peekLatest("phone-otp-change-old:{$user->id}:");
 
         $this->postJson('/api/auth/phone-otp/identifier/change/confirm-old', [
             'code' => $oldCode, 'sms' => ['template' => 'Нет подстановки кода'],
         ])->assertUnprocessable()->assertJsonValidationErrors('sms.template');
-        $this->assertSame($oldCode, $otp->peek("phone-otp-change-old:{$user->id}"));
+        $this->assertSame($oldCode, $otp->peekLatest("phone-otp-change-old:{$user->id}:"));
 
         $this->postJson('/api/auth/phone-otp/identifier/change/confirm-old', ['code' => $oldCode])->assertOk();
     }

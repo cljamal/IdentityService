@@ -4,6 +4,7 @@ namespace App\Auth\Strategies\Contracts;
 
 use App\Models\User;
 use App\Notifications\Otp\SmsTemplate;
+use Closure;
 
 /**
  * Additional contract for strategies that can confirm account deletion
@@ -23,6 +24,7 @@ interface ConfirmsDeletion
 
     /**
      * @param  array<string, mixed>  $data
+     * @param  Closure(): void  $onConfirmed
      */
-    public function confirmDeletion(User $user, array $data): void;
+    public function confirmDeletion(User $user, array $data, Closure $onConfirmed): void;
 }

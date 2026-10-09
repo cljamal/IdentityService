@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Auth\LoginAction;
 use App\Actions\Auth\RefreshTokenAction;
 use App\Actions\Auth\RegisterAction;
+use App\Actions\Auth\ResendRegistrationCodeAction;
 use App\Actions\Auth\VerifyRegistrationAction;
 use App\Auth\Enums\AuthProviderName;
 use App\Auth\Enums\SessionRevocationReason;
@@ -36,6 +37,13 @@ final class AuthController extends Controller
     public function verifyRegistration(AuthProviderName $provider, Request $request): TokenResource
     {
         return TokenResource::make(VerifyRegistrationAction::run($provider, $request->all()));
+    }
+
+    public function resendRegistrationCode(AuthProviderName $provider, Request $request): MessageResource
+    {
+        ResendRegistrationCodeAction::run($provider, $request->all());
+
+        return MessageResource::make('Код подтверждения отправлен повторно.');
     }
 
     /**

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\Otp\SmsTemplate;
 use App\Repositories\Contracts\AuthProviderRepositoryInterface;
 use App\Repositories\Contracts\IdentityChangeLogRepositoryInterface;
+use Closure;
 
 final readonly class UsernamePasswordStrategy extends PasswordStrategy implements ResetsPassword
 {
@@ -101,7 +102,7 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
         // "existence vs delivery", что и у email-password.
         $destination = $identity?->user ? $this->rescue->resolve($identity->user) : null;
 
-        $this->reset->request($this->provider(), $username, $destination, $sms);
+        $this->reset->request($this->provider(), $username, $identity, $destination, $sms);
     }
 
     /**
@@ -121,8 +122,8 @@ final readonly class UsernamePasswordStrategy extends PasswordStrategy implement
      *
      * @throws InvalidOtpException
      */
-    public function resetPassword(array $data): User
+    public function resetPassword(array $data, Closure $afterPasswordReset): User
     {
-        return $this->reset->confirm($this->provider(), $data['username'], $data['code'], $data['password']);
+        return $this->reset->confirm($this->provider(), $data['username'], $data['code'], $data['password'], $afterPasswordReset);
     }
 }

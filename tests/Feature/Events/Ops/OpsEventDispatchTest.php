@@ -74,7 +74,8 @@ class OpsEventDispatchTest extends TestCase
 
         /** @var FakeOtpRepository $otp */
         $otp = $this->app->make(OtpRepositoryInterface::class);
-        $code = $otp->peek("{$this->defaultClient->id}:email-password-reset:user@example.com");
+        $identity = AuthProvider::query()->where('user_id', $user->id)->firstOrFail();
+        $code = $otp->peek("{$this->defaultClient->id}:email-password-reset:{$identity->id}:user@example.com");
 
         Event::fake([UserSessionRevoked::class]);
 
