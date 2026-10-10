@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to coding agents working in this repository.
+These project rules apply to every developer and coding agent working in this repository,
+regardless of vendor, model, editor or client. The filename is an entry point, not a restriction
+to a particular agent. Shared conventions must not depend on one client's configuration format.
 [AGENTS.md](AGENTS.md) is a pointer to this file. Keep important changes to project rules
 and owner requirements here, not in AGENTS.md.
 
@@ -23,9 +25,10 @@ agents permission to execute migrations or create clients in a working database.
 - Never create a commit without the owner's explicit request to commit. Permission to edit files is
   not permission to commit them.
 - If a requirement is ambiguous or a decision is uncertain, ask the owner before deciding that point.
-  Continue independent work that does not depend on the answer.
-- Do not use PowerShell or CMD to edit files. Use `apply_patch`, Git Bash from
-  `C:/Program Files/Git/bin`, or Linux tools through `IdentityServer`, preserving the existing encoding.
+  Continue independent work that does not depend on the answer. Routine environment discovery and
+  restoration covered by the session bootstrap below are already authorized; do not ask again.
+- Do not use PowerShell or CMD to edit files. Use `apply_patch`, Git Bash discovered on the host,
+  or Linux tools through `IdentityServer`, preserving the existing encoding.
   Use readable edits; do not repeatedly submit opaque Base64 file-writing commands.
 - Run PHP, Composer and Linux checks through the owner-provided `IdentityServer` alias:
   `IdentityServer ls`, `IdentityServer composer ...`, `IdentityServer php ...`.
@@ -39,6 +42,57 @@ These requirements adapt the general rules from Gateway's CLAUDE.md, which the o
 priority over conflicting older IdentityService rules. Gateway-specific proxy, Filament, Octane,
 monitoring and deployment implementations are not requirements for this service.
 Generated Boost guidelines must preserve the owner requirements in this file; they do not override them.
+
+## Session bootstrap and portability
+
+At the start of each new agent or session, discover and verify the current environment before
+project work. Reuse successful checks from this session; repeat them only after an environment
+change or a relevant failure. The owner provides `IdentityServer` and `IdentityServerMcp` on PATH;
+their locations may differ between computers. Do not ask the owner where they are stored.
+
+1. Resolve both commands through the current process's PATH (`Get-Command` or `where.exe` on
+   Windows). If absent, inspect the current user and machine PATH and refresh the process PATH
+   from those values before retrying: a running app may have inherited an older environment.
+   Preserve existing process PATH entries. Use discovered absolute paths for this session if needed.
+   Do not scan entire drives, hardcode previous host paths, or rewrite the owner's launchers.
+2. Through `IdentityServer`, run `pwd`, `ls`, `php -v` and `composer -V`. Verify that the directory
+   contains this project's `artisan`, `composer.json` and `CLAUDE.md`. Treat the launcher as the
+   source of SSH and container settings; do not reconstruct a different connection from memory.
+3. Check installed project tools against `composer.lock`: Boost, PHPUnit, PHPStan and Pint.
+   Check Node.js and npm through `IdentityServer` when frontend work requires them. If locked
+   dependencies are missing, restoring them with `composer install --no-interaction --no-progress`
+   in the verified root is authorized. Inspect Composer scripts first; never execute any hook
+   that changes database schema or data. Use `--no-scripts` and run only safe necessary hooks if
+   required. Do not update the lock file or add dependencies as part of bootstrap.
+4. Inspect the current client's available MCP tools and local MCP configuration. Ensure the
+   stdio connection `identity-boost` launches the discovered `IdentityServerMcp`. Use the current
+   client's supported configuration format and scope; do not copy another client's settings blindly.
+   On Windows,
+   launch a batch file through `cmd.exe /d /c` with its discovered path. Adding a missing entry
+   or repairing a stale launcher path in the local agent configuration is authorized. Preserve
+   unrelated settings, credentials and other MCP servers; back up configuration before editing it.
+   Keep machine-specific paths in local configuration, never in shared project instructions.
+5. Verify MCP initialization, tool listing and a read-only tool such as `application-info`.
+   If native MCP tools are not yet loaded, a temporary stdio protocol check is sufficient to
+   diagnose the launcher. Such a check does not make the tools available to the current agent.
+   Report when the agent app needs a restart or MCP reload; do not restart it automatically.
+6. Verify documentation tooling when needed. If Context7 fails because the host Node.js is too
+   old, discover an already installed compatible runtime and use it for that tool's process or
+   local MCP configuration. Do not change the system-wide runtime for other projects, expose
+   API keys in output, or silently substitute remembered documentation for a failed lookup.
+
+Perform these checks and authorized repairs without clarification questions. Follow the tool's
+normal permission flow when sandbox restrictions require approval; project authorization does
+not bypass it. Use equivalent discovery, file editing and verification tools supported by the
+current client. If a required capability is unavailable, state that limitation and continue the
+checks that are possible; do not assume every agent supports shell execution or MCP configuration.
+Never install host PHP/Composer, change working database data, run migrations,
+replace SSH credentials or modify global runtime defaults during bootstrap. If both PATH sources
+still lack a launcher, SSH authentication fails, a required runtime is genuinely absent, or a
+repair requires a prohibited action, report the specific blocker and the minimum owner action.
+Continue independent work where possible. Summarize actual checks and repairs briefly, and do
+not claim readiness for tools that have not been verified. Do not run the full test suite merely
+to check tool availability.
 
 ## Never run migrations
 
@@ -176,26 +230,29 @@ IdentityServer composer -V
 If either is unavailable, tell the owner which prerequisite is missing and wait for the environment
 to be prepared. Do not run the former automatic php.new installation commands on the host.
 
-Install Laravel Boost as a development dependency from the verified application root if it is not
-already installed, then generate the application-specific guidelines:
-
-```sh
-IdentityServer composer require laravel/boost --dev
-IdentityServer php artisan boost:install
-```
+Laravel Boost is a locked development dependency. If it is missing from `vendor`, restore it
+using the session bootstrap procedure. If it is absent from the dependency manifests, report
+the discrepancy rather than changing dependencies automatically. Existing project guidelines
+do not need regeneration on every session or computer transfer.
 
 After installation, read both AGENTS.md and CLAUDE.md again and continue with the original request.
 Keep AGENTS.md pointing to this file and retain owner requirements here if the generator changes the
 instruction files. Incorporate the generated application-specific guidance without losing these rules.
 Documentation-only changes do not require changing Composer dependencies.
 
-The Codex MCP connection is registered as `identity-boost` on the Windows host, using
-`D:/VMs/BinBoxes/IdentityServerMcp.bat`. This alias runs Boost over SSH without a terminal and
-forwards stdin into the container. Keep it separate from the interactive `IdentityServer` alias.
-The verified container root is `/var/www/TG/IdentityService`.
+Use the host commands `IdentityServer` for project commands and `IdentityServerMcp` for the
+MCP connection named `identity-boost` in any compatible client. The MCP launcher runs Boost over SSH without a
+terminal and forwards stdin into the container. Keep it separate from the interactive launcher.
+Launcher locations, SSH credentials, container names and project paths are machine-specific;
+configure them on each host rather than recording absolute paths in shared project instructions.
+Resolve launchers and repair local MCP configuration using the session bootstrap procedure.
+Verify the current container project root with `IdentityServer pwd` and `IdentityServer ls`
+before using it; do not rely on a path verified on another machine.
 
 Generate or refresh guidelines with `IdentityServer php artisan boost:install --guidelines --no-interaction`.
-`config/boost.php` directs Codex guidelines to CLAUDE.md, leaving AGENTS.md as a pointer.
+Keep shared guidelines in CLAUDE.md and AGENTS.md as a pointer. Generator settings in
+`config/boost.php` and `boost.json` describe configured integrations, not which agents may work
+on the project. Any additional client integration must preserve these shared rules.
 MCP transport is configured on the Windows host; do not replace it with a container-local PHP command
 generated by the MCP installer.
 
