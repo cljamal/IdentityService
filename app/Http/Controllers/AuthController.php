@@ -68,7 +68,7 @@ final class AuthController extends Controller
 
         UserSessionRevoked::dispatch($user, SessionRevocationReason::Logout);
 
-        return MessageResource::make('Successfully logged out');
+        return MessageResource::make('LOGGED_OUT');
     }
 
     /**

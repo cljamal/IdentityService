@@ -16,6 +16,6 @@ final class VerificationCodeController extends Controller
     {
         SendVerificationCodeAction::run($provider, $request->all());
 
-        return MessageResource::make('Код отправлен.');
+        return MessageResource::make('OTP_CODE_SENT');
     }
 }
